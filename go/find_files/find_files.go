@@ -1,7 +1,7 @@
 package find_files
 
 import (
-	"fmt"
+	
 	lgo "gopkg.in/yageek/lambertgo.v1"
 
 	"strconv"
@@ -35,3 +35,4 @@ func from_GPS_WGS84_to_Lambert_93(longStr string, latStr string) (float64, float
 
 	return point.X, point.Y, nil
 }
+

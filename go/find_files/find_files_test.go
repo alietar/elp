@@ -5,7 +5,7 @@ import (
 	"fmt"
 )
 
-func Testfrom_GPS_WGS84_to_Lambert_93(t *testing.T) {
+func Test_from_GPS_WGS84_to_Lambert_93(t *testing.T) {
 	
 	// Coordonnées GPS WGS84 (Paris)
 	longitude := "2.3522"
