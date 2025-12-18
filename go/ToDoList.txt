@@ -1,0 +1,4 @@
+1. traduire les coordonnées Lambert93 -> coordonnées classiques 
+2. Trouver les 9 fichiers correspondant à cette altitude et ceux autour
+3. algo qui calcule les points à max +-10m de notre point
+
