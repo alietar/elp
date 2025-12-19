@@ -21,9 +21,11 @@ func Case_depart(x0, y0 float64, fichier string) (i, j int) {
 	elem := strings.Fields(string(donnees)) // on sépare chaque element du fichier (sépare dès qu'il y a un espace ou retour à la ligne)
 
 	// les coordonnées en lambert de la case d'indice [1000][0]
-	x, err := strconv.ParseFloat(elem[5], 64) // conversion de string en float64
-	y, err := strconv.ParseFloat(elem[7], 64) // conversion de string en float64
-
+	x, err1 := strconv.ParseFloat(elem[5], 64) // conversion de string en float64
+	y, err2 := strconv.ParseFloat(elem[7], 64) // conversion de string en float64
+	if err1 != nil || err2 != nil {
+		fmt.Println("Erreur lors de la récupération de des coordonnées", err)
+	}
 	i = int(1000 - (x-x0)/25) // car entre chaque indice il y a 25m
 	j = int(1000 + (y-y0)/25)
 
