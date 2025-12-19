@@ -1,4 +1,4 @@
-package find_files
+package findfiles
 
 import (
 	lgo "github.com/yageek/lambertgo"
@@ -6,8 +6,7 @@ import (
 	"strconv"
 )
 
-func from_GPS_WGS84_to_Lambert_93(longStr string, latStr string) (float64, float64, error) {
-
+func FromGpsWgs84ToLambert93(longStr string, latStr string) (float64, float64, error) {
 	longitude, err := strconv.ParseFloat(longStr, 64)
 	if err != nil {
 		return 0, 0, err

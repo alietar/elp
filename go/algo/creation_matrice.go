@@ -5,7 +5,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
-	"find_files"
+	"findfiles"
 )
 
 func Creation_matrice() [1000][1000]float64 {

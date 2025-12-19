@@ -1,7 +1,7 @@
 package algo
 
 import (
-	"find_files"
+	"findfiles"
 )
 
 func Case_depart() (i, j int) {
