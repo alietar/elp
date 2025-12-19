@@ -8,7 +8,7 @@ import (
 )
 
 // prend en argument le nom du fichier de BD de départ et renvoie une matrice 1000x1000 des altitudes
-func Creation_matrice(fichier char) [1000][1000]float64 {
+func Creation_matrice(fichier string) [1000][1000]float64 {
 
 	var Matrice [1000][1000]float64
 

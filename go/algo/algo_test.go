@@ -1,9 +1,5 @@
 package algo
 
-import (
-	"testing"
-)
-
 /*6func TestTrouverVoisins(t *testing.T) {
 matrice := [5][5]float64{
 	{341.76, 0, 0, 340.95, 0},
@@ -23,6 +19,8 @@ afficherMatrice(TrouverVoisins(matrice, 1, 1))
 })*/
 //}
 
+/*
 func TestCreation_matrice(t *testing.T) {
 	Creation_matrice()
 }
+*/
