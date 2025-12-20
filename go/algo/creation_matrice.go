@@ -8,17 +8,14 @@ import (
 )
 
 // prend en argument le nom du fichier de BD de départ et renvoie une matrice 1000x1000 des altitudes
-func Creation_matrice(fichier string) [1000][1000]float64 {
-
-	var Matrice [1000][1000]float64
-
-	donnees, err := os.ReadFile(fichier) // lire le fichier en question, data est en byte
+func CreationMatrice(cheminFichier string) (matrice [1000][1000]float64) {
+	donnees, err := os.ReadFile(cheminFichier) // lire le fichier en question, data est en byte
 	if err != nil {
 		fmt.Println("Erreur lecture base de données:", err)
-		return Matrice
+		return
 	}
 
-	fmt.Println(string(donnees)) // conversion de byte en string
+	// fmt.Println(string(donnees)) // conversion de byte en string
 
 	elem := strings.Fields(string(donnees)) // on sépare chaque element du fichier (sépare dès qu'il y a un espace ou retour à la ligne)
 
@@ -31,10 +28,10 @@ func Creation_matrice(fichier string) [1000][1000]float64 {
 			if err != nil {
 				fmt.Println("Erreur lors de la récupération de l'altitude", err)
 			}
-			Matrice[i][j] = alt
+			matrice[i][j] = alt
 			k += 1
 		}
 	}
 
-	return Matrice
+	return
 }
