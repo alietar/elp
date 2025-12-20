@@ -53,9 +53,6 @@ func trouverVoisinsRecursif(
 	if y < uint(TAILLE_MATRICE-1) && !visites[x][y+1] && matrice[x][y+1] != 0 {
 		res = trouverVoisinsRecursif(matrice, res, visites, x, y+1)
 	}
-	fmt.Printf("\n---\n\n")
-
-	afficherMatrice(res)
 
 	return res
 }

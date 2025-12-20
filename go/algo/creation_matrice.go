@@ -5,15 +5,12 @@ import (
 	"os"
 	"strconv"
 	"strings"
-	"findfiles"
 )
 
-func Creation_matrice() [1000][1000]float64 {
-
+func Creation_matrice(cheminFichier string) [1000][1000]float64 {
 	var Matrice [1000][1000]float64
 
-	fichier := find_files. // récupérer le resultat de la fonction qui trouve le bon fichier de la BD
-	donnees, err := os.ReadFile(fichier) // lire le fichier en question, data est en byte
+	donnees, err := os.ReadFile(cheminFichier) // lire le fichier en question, data est en byte
 	if err != nil {
 		fmt.Println("Erreur lecture base de données:", err)
 		return Matrice
