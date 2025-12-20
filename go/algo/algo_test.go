@@ -95,5 +95,5 @@ func TestCaseDepart(t *testing.T) {
 		t.Errorf("Erreur pour trouver la case départ")
 	}
 
-	fmt.Printf("x: %d\ny: %d\n", x, y)
+	// fmt.Printf("x: %d\ny: %d\n", x, y)
 }
