@@ -74,8 +74,26 @@ func evaluerReponse(t testing.TB, got, want [5][5]float64) {
 	}
 }
 
-/*
-func TestCreation_matrice(t *testing.T) {
-	// Creation_matrice()
+func TestCreationMatrice(t *testing.T) {
+	var matriceVide [1000][1000]float64
+
+	matriceResultat := CreationMatrice("../bd/1_DONNEES_LIVRAISON_2024-02-00018/BDALTIV2_MNT_25M_ASC_LAMB93_IGN69_D069/BDALTIV2_25M_FXX_0775_6550_MNT_LAMB93_IGN69.asc")
+	if matriceResultat == matriceVide {
+		t.Errorf("Erreur à la création de matrice")
+	}
 }
-*/
+
+func TestPointsAtteignables(t *testing.T) {
+	matrice := CreationMatrice("../bd/1_DONNEES_LIVRAISON_2024-02-00018/BDALTIV2_MNT_25M_ASC_LAMB93_IGN69_D069/BDALTIV2_25M_FXX_0775_6550_MNT_LAMB93_IGN69.asc")
+	PointsAtteignables(10, 13, 14, matrice)
+}
+
+func TestCaseDepart(t *testing.T) {
+	x, y := CaseDepart(10, 10, "../bd/1_DONNEES_LIVRAISON_2024-02-00018/BDALTIV2_MNT_25M_ASC_LAMB93_IGN69_D069/BDALTIV2_25M_FXX_0775_6550_MNT_LAMB93_IGN69.asc")
+
+	if x == -1 || y == -1 {
+		t.Errorf("Erreur pour trouver la case départ")
+	}
+
+	fmt.Printf("x: %d\ny: %d\n", x, y)
+}
