@@ -24,7 +24,7 @@ func TrouverVoisins(
 	matrice [TAILLE_MATRICE][TAILLE_MATRICE]float64,
 	depart_x, depart_y uint,
 ) [TAILLE_MATRICE][TAILLE_MATRICE]float64 {
-	return trouverVoisinsRecursif(matrice, creerMatriceRes(), creerMatriceVisite(), 1, 1)
+	return trouverVoisinsRecursif(matrice, creerMatriceRes(), creerMatriceVisite(), depart_x, depart_y)
 }
 
 func trouverVoisinsRecursif(
@@ -35,6 +35,10 @@ func trouverVoisinsRecursif(
 ) [TAILLE_MATRICE][TAILLE_MATRICE]float64 {
 	x := depart_x
 	y := depart_y
+
+	if matrice[x][y] == 0 {
+		return res
+	}
 
 	visites[x][y] = true
 	res[x][y] = matrice[x][y]
