@@ -50,6 +50,8 @@ func evaluerReponse(t testing.TB, got, want [5][5]float64) {
 	}
 }
 
+/*
 func TestCreation_matrice(t *testing.T) {
 	// Creation_matrice()
 }
+*/
