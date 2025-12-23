@@ -97,3 +97,12 @@ func TestCaseDepart(t *testing.T) {
 
 	// fmt.Printf("x: %d\ny: %d\n", x, y)
 }
+
+func TestGetDepartement(t *testing.T) {
+	fmt.Println(GetDepartement(45.767712, 4.98775))
+	fmt.Println(GetDepartement(47.433331, -2.08333))
+}
+
+func TestDownloadUnzipDB(t *testing.T) {
+	downloadUnzipDB(69)
+}
