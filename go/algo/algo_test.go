@@ -2,74 +2,113 @@ package algo
 
 import (
 	"fmt"
+	"math/rand/v2"
+	"reflect"
 	"testing"
 )
 
-func TestTrouverVoisins(t *testing.T) {
-	matriceTest := [5][5]float64{
-		{341.76, 0, 0, 340.95, 0},
-		{0, 341.17, 0, 340.75, 340.50},
-		{0, 341.01, 340.79, 340.64, 0},
-		{341.16, 340.89, 0, 0, 0},
-		{341.08, 0, 340.60, 340.35, 339.97}}
-
-	t.Run("matrice_taille_5_situation_1", func(t *testing.T) {
-		got := TrouverVoisins(matriceTest, 0, 0)
-		want := [5][5]float64{
-			{341.76, 0, 0, 0, 0},
-			{0, 0, 0, 0, 0},
-			{0, 0, 0, 0, 0},
-			{0, 0, 0, 0, 0},
-			{0, 0, 0, 0, 0}}
-
-		evaluerReponse(t, got, want)
-	})
-
-	t.Run("matrice_taille_5_situation_2", func(t *testing.T) {
-		got := TrouverVoisins(matriceTest, 1, 1)
-		want := [5][5]float64{
-			{0, 0, 0, 340.95, 0},
+func TestFindNeighbors(t *testing.T) {
+	testMatrix := Matrix{
+		Size: 5,
+		Data: [][]float64{
+			{341.76, 0, 0, 340.95, 0},
 			{0, 341.17, 0, 340.75, 340.50},
 			{0, 341.01, 340.79, 340.64, 0},
 			{341.16, 340.89, 0, 0, 0},
-			{341.08, 0, 0, 0, 0}}
+			{341.08, 0, 340.60, 340.35, 339.97},
+		},
+	}
 
-		evaluerReponse(t, got, want)
+	t.Run("matrice_taille_5_situation_1", func(t *testing.T) {
+		got := testMatrix.FindNeighbors(0, 0)
+		want := Matrix{
+			Size: 5,
+			Data: [][]float64{
+				{341.76, 0, 0, 0, 0},
+				{0, 0, 0, 0, 0},
+				{0, 0, 0, 0, 0},
+				{0, 0, 0, 0, 0},
+				{0, 0, 0, 0, 0},
+			},
+		}
+
+		evaluateMatrices(t, got, want)
+	})
+
+	t.Run("matrice_taille_5_situation_2", func(t *testing.T) {
+		got := testMatrix.FindNeighbors(1, 1)
+		want := Matrix{
+			Size: 5,
+			Data: [][]float64{
+				{0, 0, 0, 340.95, 0},
+				{0, 341.17, 0, 340.75, 340.50},
+				{0, 341.01, 340.79, 340.64, 0},
+				{341.16, 340.89, 0, 0, 0},
+				{341.08, 0, 0, 0, 0},
+			},
+		}
+
+		evaluateMatrices(t, got, want)
 	})
 
 	t.Run("matrice_taille_5_situation_3", func(t *testing.T) {
-		got := TrouverVoisins(matriceTest, 4, 3)
-		want := [5][5]float64{
-			{0, 0, 0, 0, 0},
-			{0, 0, 0, 0, 0},
-			{0, 0, 0, 0, 0},
-			{0, 0, 0, 0, 0},
-			{0, 0, 340.60, 340.35, 339.97}}
+		got := testMatrix.FindNeighbors(4, 3)
+		want := Matrix{
+			Size: 5,
+			Data: [][]float64{
+				{0, 0, 0, 0, 0},
+				{0, 0, 0, 0, 0},
+				{0, 0, 0, 0, 0},
+				{0, 0, 0, 0, 0},
+				{0, 0, 340.60, 340.35, 339.97},
+			},
+		}
 
-		evaluerReponse(t, got, want)
+		evaluateMatrices(t, got, want)
 	})
 
 	t.Run("matrice_taille_5_situation_4", func(t *testing.T) {
-		got := TrouverVoisins(matriceTest, 1, 0)
-		want := [5][5]float64{
-			{0, 0, 0, 0, 0},
-			{0, 0, 0, 0, 0},
-			{0, 0, 0, 0, 0},
-			{0, 0, 0, 0, 0},
-			{0, 0, 0, 0, 0}}
+		got := testMatrix.FindNeighbors(1, 0)
+		want := Matrix{
+			Size: 5,
+			Data: [][]float64{
+				{0, 0, 0, 0, 0},
+				{0, 0, 0, 0, 0},
+				{0, 0, 0, 0, 0},
+				{0, 0, 0, 0, 0},
+				{0, 0, 0, 0, 0},
+			},
+		}
 
-		evaluerReponse(t, got, want)
+		evaluateMatrices(t, got, want)
+	})
+
+	t.Run("matrice_aleatoire", func(t *testing.T) {
+		size := 20
+		randomMatrix := NewMatrix(size)
+
+		for i := range size {
+			for j := range size {
+				if rand.IntN(2) == 0 {
+					randomMatrix.Data[i][j] = 10
+				}
+			}
+		}
+		randomMatrix.Show()
+
+		got := randomMatrix.FindNeighbors(0, 0)
+		got.Show()
 	})
 }
 
-func evaluerReponse(t testing.TB, got, want [5][5]float64) {
+func evaluateMatrices(t testing.TB, got, want Matrix) {
 	t.Helper()
 
-	if got != want {
+	if !reflect.DeepEqual(got.Data, want.Data) {
 		fmt.Println("Got :")
-		afficherMatrice(got)
+		got.Show()
 		fmt.Println("Want :")
-		afficherMatrice(want)
+		want.Show()
 		t.Errorf("La matrice réponse n'est pas la bonne")
 	}
 }
