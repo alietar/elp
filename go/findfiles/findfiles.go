@@ -3,10 +3,10 @@ package findfiles
 import (
 	lgo "github.com/yageek/lambertgo"
 
-	"strconv"
-	"os"
 	"bufio"
 	"fmt"
+	"os"
+	"strconv"
 	"strings"
 )
 
@@ -38,23 +38,21 @@ func FromGpsWgs84ToLambert93(longStr string, latStr string) (float64, float64, e
 	return point.X, point.Y, nil
 }
 
-
 func GetFilesNameFolder(folderName string) ([]string, error) {
-    entries, err := os.ReadDir(folderName)
-    if err != nil {
-        return nil, err
-    }
+	entries, err := os.ReadDir(folderName)
+	if err != nil {
+		return nil, err
+	}
 
-    var files []string
-    for _, entry := range entries {
-        if !entry.IsDir() {
-            files = append(files, entry.Name())
-        }
-    }
+	var files []string
+	for _, entry := range entries {
+		if !entry.IsDir() {
+			files = append(files, entry.Name())
+		}
+	}
 
-    return files, nil
+	return files, nil
 }
-
 
 func ReadCoordinateLambert93File(fileName string) (float64, float64, float64, error) {
 	file, err := os.Open(fileName)
@@ -110,7 +108,6 @@ func ReadCoordinateLambert93File(fileName string) (float64, float64, float64, er
 	return 0, 0, 0, fmt.Errorf("header incomplete in %s", fileName)
 }
 
-
 func GetFileForMyCoordinate(longStr string, latStr string, folderPath string) (string, error) {
 
 	// 1. Conversion WGS84 → Lambert-93
@@ -139,8 +136,8 @@ func GetFileForMyCoordinate(longStr string, latStr string, folderPath string) (s
 		}
 
 		// 4. Calcul des bornes
-		xmin := xll
-		xmax := xll + 1000*cellsize
+		xmin := xll - 1000*cellsize
+		xmax := xll
 		ymin := yll
 		ymax := yll + 1000*cellsize
 
@@ -152,5 +149,3 @@ func GetFileForMyCoordinate(longStr string, latStr string, folderPath string) (s
 
 	return "", fmt.Errorf("coordinate not found in any file")
 }
-
-
