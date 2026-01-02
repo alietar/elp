@@ -9,37 +9,52 @@ import (
 )
 
 func main() {
-	longitude := "3.6554553"
-	latitude := "46.0416860"
+	longitude := "4.8723056"
+	latitude := "45.7837778"
+
+	folder := "./bd/1_DONNEES_LIVRAISON_2024-02-00018/BDALTIV2_MNT_25M_ASC_LAMB93_IGN69_D069/"
+
+	path, er := findfiles.GetFileForMyCoordinate(longitude, latitude, folder)
+	path = folder + path
+
+	if er != nil {
+		fmt.Println(er)
+		return
+	}
 
 	xLambert, yLambert, er := findfiles.FromGpsWgs84ToLambert93(longitude, latitude)
+
+	if er != nil {
+		fmt.Println(er)
+		return
+	}
+
 	fmt.Printf("xLambert: %f, yLambert: %f\n", xLambert, yLambert)
-	fmt.Println(er)
 
-	// xLambert = 774987.500000000000 - 24300
-	// yLambert = 6525012.500000000000 + 24300
+	x, y := algo.CaseDepart(xLambert, yLambert, path)
 
-	x, y := algo.CaseDepart(xLambert, yLambert, "./bd/1_DONNEES_LIVRAISON_2024-02-00018/BDALTIV2_MNT_25M_ASC_LAMB93_IGN69_D069/BDALTIV2_25M_FXX_0775_6550_MNT_LAMB93_IGN69.asc")
+	if x == -1 || y == -1 {
+		fmt.Printf("Erreur sur le calcul de la case départ\n")
+		return
+	}
 
 	fmt.Printf("x: %d, y: %d\n", x, y)
+	mat := algo.CreationMatrice(path)
+	mat2 := algo.PointsAtteignables(5, x, y, mat)
 
-	mat := algo.CreationMatrice("./bd/1_DONNEES_LIVRAISON_2024-02-00018/BDALTIV2_MNT_25M_ASC_LAMB93_IGN69_D069/BDALTIV2_25M_FXX_0775_6550_MNT_LAMB93_IGN69.asc")
-	mat2 := algo.PointsAtteignables(2, x, y, mat)
+	fmt.Printf("Altitude : %f\n", mat[x][y])
 
-	fmt.Printf("%f\n", mat[x][y])
+	fullMatrix := algo.NewMatrix(1000)
 
-	testSize := 60
-
-	matrix := algo.NewMatrix(testSize)
-
-	for i := range testSize {
-		for j := range testSize {
-			matrix.Data[i][j] = mat2[i][j]
+	for i := range 1000 {
+		for j := range 1000 {
+			fullMatrix.Data[i][j] = mat2[i][j]
 		}
 	}
 
-	matrix.ShowPrettyWithStart(x, y)
+	fullMatrix = fullMatrix.FindNeighbors(x, y)
 
-	matrix2 := matrix.FindNeighbors(x, y)
-	matrix2.ShowPrettyWithStart(x, y)
+	smallMatrix, newX, newY := fullMatrix.Resize(x, y, 50)
+
+	smallMatrix.ShowPrettyWithStart(newX, newY)
 }

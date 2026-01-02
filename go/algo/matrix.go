@@ -1,6 +1,8 @@
 package algo
 
-import "fmt"
+import (
+	"fmt"
+)
 
 type Matrix struct {
 	Size int
@@ -64,4 +66,44 @@ func (m *Matrix) ShowPrettyWithStart(x, y int) {
 
 		fmt.Printf("\n")
 	}
+}
+
+func (m *Matrix) Resize(xCenter, yCenter, size int) (Matrix, int, int) {
+	if size >= m.Size {
+		return *m, xCenter, yCenter
+	}
+
+	clampedXCenter := Clamp(size/2, m.Size-size/2, xCenter)
+	clampedYCenter := Clamp(size/2, m.Size-size/2, yCenter)
+
+	newMatrix := NewMatrix(size)
+
+	for i := range size {
+		for j := range size {
+			newMatrix.Data[i][j] = m.Data[(clampedXCenter-size/2)+i][(clampedYCenter-size/2)+j]
+		}
+	}
+
+	return newMatrix, Min(size/2, xCenter), Min(size/2, yCenter)
+}
+
+func Clamp(min, max, a int) int {
+	return Min(Max(a, min), max)
+}
+
+func Max(a, b int) int {
+	if a >= b {
+		return a
+	} else {
+		return b
+	}
+}
+
+func Min(a, b int) int {
+	if a < b {
+		return a
+	} else {
+		return b
+	}
+
 }
