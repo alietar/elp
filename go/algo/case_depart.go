@@ -32,5 +32,10 @@ func CaseDepart(x0, y0 float64, cheminFichier string) (i, j int) {
 	i = int(1000 - (x-x0)/25) // car entre chaque indice il y a 25m
 	j = int(1000 + (y-y0)/25)
 
+	if i > 1000 || j > 1000 {
+		fmt.Println("Coordonnées lambert en dehors de la case")
+		return -1, -1
+	}
+
 	return
 }
