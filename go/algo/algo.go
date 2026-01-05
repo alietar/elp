@@ -1,6 +1,11 @@
 package algo
 
-func (m *Matrix) FindNeighbors(startX, startY int) Matrix {
+func ExploreAdjacentTile(startI, startJ) {
+	// Get the adjacent matrix
+	// Run Find neighbors on it
+}
+
+func (m *Matrix) FindNeighbors(startX, startY int, done chan bool, exploreAdjacentTile chan [2]int) Matrix {
 	// Initialization of the matrices result and visited
 	result := make([][]float64, m.Size)
 	visited := make([][]bool, m.Size)
@@ -30,6 +35,10 @@ func (m *Matrix) findNeighborsRecursive(
 
 	visited[x][y] = true
 	result[x][y] = m.Data[x][y]
+
+	if x == 0 {
+
+	}
 
 	if x > 0 && !visited[x-1][y] && m.Data[x-1][y] != 0 {
 		result = m.findNeighborsRecursive(result, visited, x-1, y)

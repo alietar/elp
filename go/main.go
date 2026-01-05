@@ -15,6 +15,9 @@ func main() {
 	folder := "./bd/1_DONNEES_LIVRAISON_2024-02-00018/BDALTIV2_MNT_25M_ASC_LAMB93_IGN69_D069/"
 
 	path, er := findfiles.GetFileForMyCoordinate(longitude, latitude, folder)
+
+	fmt.Println(path)
+
 	path = folder + path
 
 	if er != nil {
