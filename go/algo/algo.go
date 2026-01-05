@@ -1,11 +1,11 @@
 package algo
 
-func ExploreAdjacentTile(startI, startJ) {
-	// Get the adjacent matrix
-	// Run Find neighbors on it
-}
+//func ExploreAdjacentTile(startI, startJ) {
+// Get the adjacent matrix
+// Run Find neighbors on it
+//}
 
-func (m *Matrix) FindNeighbors(startX, startY int, done chan bool, exploreAdjacentTile chan [2]int) Matrix {
+func (m *Matrix) FindNeighbors(startX, startY int) Matrix {
 	// Initialization of the matrices result and visited
 	result := make([][]float64, m.Size)
 	visited := make([][]bool, m.Size)
