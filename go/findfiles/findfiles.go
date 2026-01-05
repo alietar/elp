@@ -136,8 +136,8 @@ func GetFileForMyCoordinate(longStr string, latStr string, folderPath string) (s
 		}
 
 		// 4. Calcul des bornes
-		xmin := xll - 1000*cellsize
-		xmax := xll
+		xmin := xll
+		xmax := xll + 1000*cellsize
 		ymin := yll
 		ymax := yll + 1000*cellsize
 
