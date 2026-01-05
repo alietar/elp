@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+	<html>
+	<head>
+		<title>Zone atteignable</title>
+		<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" /> <!-- // Réseau de Diffusion de Contenu Leaflet qui est une bibliothèque JS pour les cartes interactives -->
+		<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script> <!-- // Bibliothèque JS Leaflet -->
+		<style>#map { height: 100vh; width: 100%; }</style>
+	</head>
+	<body>
+		<div id="map"></div>
+		<script>
+			var startLat = {{.Lat}}; // Valeurs injectées par le serveur Go
+			var startLng = {{.Lng}};
+			var map = L.map('map').setView([startLat, startLng], 15); // Initialisation de la carte centrée sur les coordonnées données avec un niveau de zoom de 15 (0 = monde entier)
+
+			// Ajout de OpenStreetMap qui est une source de tuiles cartographiques libres
+			L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+				attribution: '© OpenStreetMap'
+			}).addTo(map);
+
+			
+
+			fetch('/points') // Récupération des points depuis le serveur Go
+				.then(res => res.json()) // Conversion de la réponse en JSON
+				.then(data => {
+					if (data.length > 0) {
+						// On crée un groupe de points
+						var group = new L.featureGroup();
+						data.forEach(p => {
+							// On définit les coins du carré (environ 0.00011 degrés = 12.5 mètres)
+							var bounds = [
+								[p.lat - 0.000117, p.lng - 0.000167], 
+								[p.lat + 0.000117, p.lng + 0.000167]
+							];
+							var rect = L.rectangle(bounds, {color: 'blue', weight: 0, fillOpacity: 0.5}).addTo(map); // Création d'un rectangle pour chaque point
+							group.addLayer(rect); // On ajoute chaque rectangle au groupe
+
+							/* Si on veut des cercles à la place des rectangles
+							var circle = L.circle([p.lat, p.lng], {radius: 12, color: 'blue', weight: 1, fillOpacity: 0.5}).addTo(map);
+							group.addLayer(circle);
+							*/
+						});
+
+						// POINT DE DÉPART EN ROUGE
+					L.circle([startLat, startLng], {
+						radius: 15,
+						color: 'red',
+						fillColor: '#f03',
+						fillOpacity: 0.7,
+						weight: 1,
+						}).addTo(map);
+					
+					};
+
+					map.fitBounds(group.getBounds()); // On ajuste la vue pour inclure tous les points
+
+				});
+
+				
+		</script>
+	</body>
+	</html>
