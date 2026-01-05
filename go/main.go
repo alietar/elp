@@ -41,7 +41,7 @@ func main() {
 
 	fmt.Printf("x: %d, y: %d\n", x, y)
 	mat := algo.CreationMatrice(path)
-	mat2 := algo.PointsAtteignables(5, x, y, mat)
+	mat2 := algo.PointsAtteignables(10, x, y, mat)
 
 	fmt.Printf("Altitude : %f\n", mat[x][y])
 
