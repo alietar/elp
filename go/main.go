@@ -9,8 +9,8 @@ import (
 )
 
 func main() {
-	longitude := "4.8723056"
-	latitude := "45.7837778"
+	longitude := "4.582209"
+	latitude := "45.430121"
 
 	folder := "./bd/1_DONNEES_LIVRAISON_2024-02-00018/BDALTIV2_MNT_25M_ASC_LAMB93_IGN69_D069/"
 
@@ -19,6 +19,7 @@ func main() {
 	fmt.Println(path)
 
 	path = folder + path
+	fmt.Println(path)
 
 	if er != nil {
 		fmt.Println(er)
@@ -43,7 +44,7 @@ func main() {
 
 	fmt.Printf("x: %d, y: %d\n", x, y)
 	mat := algo.CreationMatrice(path)
-	mat2 := algo.PointsAtteignables(5, x, y, mat)
+	mat2 := algo.PointsAtteignables(10, x, y, mat)
 
 	fmt.Printf("Altitude : %f\n", mat[x][y])
 
