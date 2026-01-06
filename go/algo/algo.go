@@ -1,11 +1,11 @@
 package algo
 
-func ExploreAdjacentTile(startI, startJ) {
-	// Get the adjacent matrix
-	// Run Find neighbors on it
-}
+import (
+	"sync"
+	"fmt"
+)
 
-func (m *Matrix) FindNeighbors(startX, startY int, done chan bool, exploreAdjacentTile chan [2]int) Matrix {
+func (m *Matrix) FindNeighbors(startX, startY int, wg *sync.WaitGroup, results chan [][]float64, exploreAdj chan [2]float64) {
 	// Initialization of the matrices result and visited
 	result := make([][]float64, m.Size)
 	visited := make([][]bool, m.Size)
@@ -15,20 +15,23 @@ func (m *Matrix) FindNeighbors(startX, startY int, done chan bool, exploreAdjace
 		visited[i] = make([]bool, m.Size)
 	}
 
-	return Matrix{
+	/*return Matrix{
 		Size: m.Size,
 		Data: m.findNeighborsRecursive(result, visited, startX, startY),
-	}
+	}*/
+
+	results <- m.findNeighborsRecursive(result, visited, startX, startY, exploreAdj, wg)
+	
+	wg.Done()
 }
 
 func (m *Matrix) findNeighborsRecursive(
 	result [][]float64,
 	visited [][]bool,
-	startX, startY int,
+	x, y int,
+	exploreAdj chan[2]float64,
+	wg *sync.WaitGroup,
 ) [][]float64 {
-	x := startX
-	y := startY
-
 	if m.Data[x][y] == 0 {
 		return result
 	}
@@ -36,23 +39,39 @@ func (m *Matrix) findNeighborsRecursive(
 	visited[x][y] = true
 	result[x][y] = m.Data[x][y]
 
-	if x == 0 {
+	if x == 0 || x == m.Size-1 || y == 0 || y == m.Size-1 {
+		var coord [2]float64
+		coord[0] = m.LambertX + float64((x-m.StartX)*25)
+		coord[1] = m.LambertY + float64((y-m.StartY)*25)
+		
+		if x == 0 { coord[0]-=25 }
+		if x == m.Size-1 { coord[0]+=25 }
+		if y ==  0 { coord[1]-=25 }
+		if y == m.Size-1 { coord[1]+=25 }
 
+		fmt.Println("Reached bounderies")
+		fmt.Printf("x: %d, oldLambert: %f, newLambert: %f\n", x, m.LambertX, coord[0])
+		fmt.Printf("y: %d, oldLambert: %f, newLambert: %f\n", y, m.LambertY, coord[1])
+		 
+		wg.Add(1)
+		exploreAdj <- coord 
+
+		return result
 	}
 
-	if x > 0 && !visited[x-1][y] && m.Data[x-1][y] != 0 {
-		result = m.findNeighborsRecursive(result, visited, x-1, y)
+	if !visited[x-1][y] && m.Data[x-1][y] != 0 {
+		result = m.findNeighborsRecursive(result, visited, x-1, y, exploreAdj, wg)
 	}
 
-	if x < m.Size-1 && !visited[x+1][y] && m.Data[x+1][y] != 0 {
-		result = m.findNeighborsRecursive(result, visited, x+1, y)
+	if !visited[x+1][y] && m.Data[x+1][y] != 0 {
+		result = m.findNeighborsRecursive(result, visited, x+1, y, exploreAdj, wg)
 	}
 
-	if y > 0 && !visited[x][y-1] && m.Data[x][y-1] != 0 {
-		result = m.findNeighborsRecursive(result, visited, x, y-1)
+	if !visited[x][y-1] && m.Data[x][y-1] != 0 {
+		result = m.findNeighborsRecursive(result, visited, x, y-1, exploreAdj, wg)
 	}
-	if y < m.Size-1 && !visited[x][y+1] && m.Data[x][y+1] != 0 {
-		result = m.findNeighborsRecursive(result, visited, x, y+1)
+	if !visited[x][y+1] && m.Data[x][y+1] != 0 {
+		result = m.findNeighborsRecursive(result, visited, x, y+1, exploreAdj, wg)
 	}
 
 	return result

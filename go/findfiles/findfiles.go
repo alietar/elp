@@ -108,21 +108,14 @@ func ReadCoordinateLambert93File(fileName string) (float64, float64, float64, er
 	return 0, 0, 0, fmt.Errorf("header incomplete in %s", fileName)
 }
 
-func GetFileForMyCoordinate(longStr string, latStr string, folderPath string) (string, error) {
-
-	// 1. Conversion WGS84 → Lambert-93
-	x, y, err := FromGpsWgs84ToLambert93(longStr, latStr)
-	if err != nil {
-		return "", err
-	}
-
-	// 2. Liste des fichiers
+func GetFileForMyCoordinate(x, y float64, folderPath string) (string, error) {
+	// 1. Liste des fichiers
 	files, err := GetFilesNameFolder(folderPath)
 	if err != nil {
 		return "", err
 	}
 
-	// 3. Parcours des fichiers
+	// 2. Parcours des fichiers
 	for _, file := range files {
 		if !strings.HasSuffix(file, ".asc") {
 			continue

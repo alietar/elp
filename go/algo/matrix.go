@@ -7,6 +7,10 @@ import (
 type Matrix struct {
 	Size int
 	Data [][]float64
+	LambertX float64
+	LambertY float64
+	StartX int
+	StartY int
 }
 
 func NewMatrix(size int) Matrix {
