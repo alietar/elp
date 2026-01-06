@@ -20,6 +20,7 @@ import (
 	// "github.com/alietar/elp/go/server"
 )
 
+<<<<<<< HEAD
 
 func main() {
 	var exploredTilesPath []string
@@ -232,6 +233,7 @@ func getMatrixFromLambert(xLambert, yLambert float64, path string) algo.Matrix {
 		}
 	}
 
+<<<<<<< HEAD
 	return fullMatrix
 }
 =======
