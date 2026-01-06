@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"sync"
 	"flag"
+	"slices"
 
 	"github.com/alietar/elp/go/algo"
 	"github.com/alietar/elp/go/findfiles"
@@ -12,6 +13,8 @@ import (
 
 
 func main() {
+	var exploredTilesPath []string
+
 	longPtr := flag.String("long", "4.582209", "starting longitude")
 	latPtr := flag.String("lat", "45.430121", "starting latitude")
 
@@ -40,16 +43,46 @@ func main() {
 
 	// Adding the first tile worker manually so the wait routine doesn't stop the program immediately
 	wg.Add(1)
+	adjacentTileCoordinatesChan <- [2]float64{xLambert, yLambert}
 
 	// This go routine stops the listenings for the channel adjacentTileCoordinates when no tile algorithm are at work
 	go waitRoutine(&wg, adjacentTileCoordinatesChan)
 	
-	addTileWorker(&wg, xLambert, yLambert, doneTileMatricesChan, adjacentTileCoordinatesChan)
+	// addTileWorker(&wg, xLambert, yLambert, doneTileMatricesChan, adjacentTileCoordinatesChan, exploredTilesPath)
+
 	
 
 	// The for will wait for new adjacentTile until the waitRoutine closes the channel
 	for tileCoordinates := range adjacentTileCoordinatesChan {
-		addTileWorker(&wg, tileCoordinates[0], tileCoordinates[1], doneTileMatricesChan, adjacentTileCoordinatesChan)
+		folder := "./bd/1_DONNEES_LIVRAISON_2024-02-00018/BDALTIV2_MNT_25M_ASC_LAMB93_IGN69_D069/"
+		
+		// Getting the right file
+		path, er := findfiles.GetFileForMyCoordinate(tileCoordinates[0], tileCoordinates[1], folder)
+
+		if er != nil {
+			fmt.Println(er)
+			continue
+		}
+		fmt.Printf("Tile is: %s\n", path)
+		fmt.Printf("xLambert: %f, yLambert: %f\n", tileCoordinates[0], tileCoordinates[1])
+
+		if slices.Contains(exploredTilesPath, path) {
+			fmt.Printf("Tile at %s already explored\n", path)
+			wg.Done()
+
+			continue	
+		}
+
+		exploredTilesPath = append(exploredTilesPath, path)
+
+		fmt.Println()
+		fmt.Println(exploredTilesPath)
+		fmt.Println()
+
+
+		path = folder + path
+		
+		addTileWorker(&wg, tileCoordinates[0], tileCoordinates[1], doneTileMatricesChan, adjacentTileCoordinatesChan, path)
 	}
 
 
@@ -123,11 +156,10 @@ doneTilePtr<-[][]float64{{1, 2}}
 }
 
 
-func addTileWorker(wg *sync.WaitGroup, xLambert, yLambert float64, results chan [][]float64, exploreAdj chan [2]float64) {
-
+func addTileWorker(wg *sync.WaitGroup, xLambert, yLambert float64, results chan [][]float64, exploreAdj chan [2]float64, path string) {
 	fmt.Printf("New tile worker starting at: x=%f, y=%f\n", xLambert, yLambert)
 
-	mat := getMatrixFromLambert(xLambert, yLambert)
+	mat := getMatrixFromLambert(xLambert, yLambert, path)
 
 	go mat.FindNeighbors(mat.StartX, mat.StartY, wg, results, exploreAdj)
 }
@@ -141,21 +173,7 @@ func waitRoutine(wg *sync.WaitGroup, adjacentTileCoordinates chan [2]float64) {
 }
 
 
-func getMatrixFromLambert(xLambert, yLambert float64) algo.Matrix {
-	folder := "./bd/1_DONNEES_LIVRAISON_2024-02-00018/BDALTIV2_MNT_25M_ASC_LAMB93_IGN69_D069/"
-	
-	// Getting the right file
-	path, er := findfiles.GetFileForMyCoordinate(xLambert, yLambert, folder)
-
-	fmt.Printf("Path to file: %s\n", path)
-
-	path = folder + path
-
-	if er != nil {
-		fmt.Println(er)
-		return algo.Matrix{}
-	}
-
+func getMatrixFromLambert(xLambert, yLambert float64, path string) algo.Matrix {
 	x, y := algo.CaseDepart(xLambert, yLambert, path)
 
 	if x == -1 || y == -1 {
