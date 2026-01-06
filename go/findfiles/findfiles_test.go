@@ -65,5 +65,38 @@ func TestGetFileForMyCoordinate(t *testing.T) {
 }
 
 
+func TestBuildBDIndex(t *testing.T) {
+
+	baseDir := "/home/leopold/Documents/3TC/ELP/GO/elp/go/bd"
+
+	index, err := BuildBDIndex(baseDir)
+	if err != nil {
+		t.Fatalf("Erreur lors de la construction de l’index BD : %v", err)
+	}
+
+	if len(index) == 0 {
+		t.Fatalf("Aucun fichier .asc trouvé dans %s", baseDir)
+	}
+
+	fmt.Printf("Nombre de fichiers indexés : %d\n", len(index))
+
+	// Affichage des 5 premiers fichiers pour vérification visuelle
+	limit := 5
+	if len(index) < limit {
+		limit = len(index)
+	}
+
+	for i := 0; i < limit; i++ {
+		f := index[i]
+		fmt.Printf(
+			"%d) %s | xll=%.2f | yll=%.2f | cell=%.2f\n",
+			i+1,
+			f.Path,
+			f.XllCorner,
+			f.YllCorner,
+			f.CellSize,
+		)
+	}
+}
 
 

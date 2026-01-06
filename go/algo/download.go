@@ -12,6 +12,13 @@ import (
 // prend en paramètres le numéro de département et télécharge la base de données correspondant
 func downloadUnzipDB(depart int) string {
 
+	err := os.MkdirAll("bd", 0755) // si bd existe, alors err == NULL et pareil si elle n'existe pas
+	
+	if err != nil {
+		fmt.Println("Erreur création dossier BD :", err)
+		return ""
+	}
+
 	motif := fmt.Sprintf("D%03d", depart) // Motif spécifique au département dans l'URL (ex: _D069_ pour le rhône)
 
 	apiURL := fmt.Sprintf("https://data.geopf.fr/telechargement/resource/BDALTI?zone=%s", motif)
@@ -107,7 +114,7 @@ func downloadUnzipDB(depart int) string {
 	// Décompression du fichier .7z
 	fmt.Println("Décompression du fichier...")
 
-	cmd := exec.Command("7z", "e", nomFichier, "-y", "-r", "*.asc") // commande pour extraire uniquement les fichiers .asc dans le dossier courant(e pour extraire, y pour répondre oui à toutes les questions si besoin, r pour parcourir tous les sous-dossiers)
+	cmd := exec.Command("7z", "e", nomFichier,"-obd", "-y", "-r", "*.asc") // commande pour extraire uniquement les fichiers .asc dans le dossier courant(e pour extraire, y pour répondre oui à toutes les questions si besoin, r pour parcourir tous les sous-dossiers)
 
 	// On lance la commande et on attend la fin
 	err = cmd.Run()
@@ -121,3 +128,19 @@ func downloadUnzipDB(depart int) string {
 	return ""
 
 }
+
+
+func downloadAllDepartements() {
+	for compteur := 1; compteur < 96; compteur++ {
+		if compteur == 20 { 
+			continue
+		}
+        fmt.Printf("Département %02d en cours de téléchargement\n", compteur)
+		downloadUnzipDB(compteur)
+    }
+}
+
+
+
+
+
