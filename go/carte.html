@@ -13,12 +13,11 @@
 			var startLng = {{.Lng}};
 			var map = L.map('map').setView([startLat, startLng], 15); // Initialisation de la carte centrée sur les coordonnées données avec un niveau de zoom de 15 (0 = monde entier)
 
-			// Ajout de OpenStreetMap qui est une source de tuiles cartographiques libres
+			// Ajout de OpenStreetMap qui est une source de tuiles cartographiques
 			L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
 				attribution: '© OpenStreetMap'
 			}).addTo(map);
 
-			
 
 			fetch('/points') // Récupération des points depuis le serveur Go
 				.then(res => res.json()) // Conversion de la réponse en JSON
@@ -32,7 +31,7 @@
 								[p.lat - 0.000117, p.lng - 0.000167], 
 								[p.lat + 0.000117, p.lng + 0.000167]
 							];
-							var rect = L.rectangle(bounds, {color: 'blue', weight: 0, fillOpacity: 0.5}).addTo(map); // Création d'un rectangle pour chaque point
+							var rect = L.rectangle(bounds, {color: 'blue', weight: 1, fillOpacity: 0.5}).addTo(map); // Création d'un rectangle pour chaque point, weight = 1 permet que les points restent visibles lorsqu'on dézoome
 							group.addLayer(rect); // On ajoute chaque rectangle au groupe
 
 							/* Si on veut des cercles à la place des rectangles
@@ -47,7 +46,7 @@
 						color: 'red',
 						fillColor: '#f03',
 						fillOpacity: 0.7,
-						weight: 1,
+						weight: 1, 
 						}).addTo(map);
 					
 					};
