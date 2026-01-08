@@ -7,6 +7,8 @@ import (
 	"net/http"
 	"os/exec"
 	"runtime"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/alietar/elp/go/algo"
@@ -33,84 +35,18 @@ func openBrowser(url string) {
 	}
 }
 
+var pointsAffiche []algo.Coordonnee // Liste des points à afficher, global pour être accessible dans les handlers
+
 func main() {
-	longitude := "4.87226"
-	latitude := "45.783844"
 
 	folder := "./bd/1_DONNEES_LIVRAISON_2024-02-00018/BDALTIV2_MNT_25M_ASC_LAMB93_IGN69_D069/"
 
-	path, er := findfiles.GetFileForMyCoordinate(longitude, latitude, folder)
-
-	fmt.Println(path)
-
-	path = folder + path
-	fmt.Println(path)
-
-	if er != nil {
-		fmt.Println(er)
-		return
-	}
-
-	xLambert, yLambert, er := findfiles.FromGpsWgs84ToLambert93(longitude, latitude)
-
-	if er != nil {
-		fmt.Println(er)
-		return
-	}
-
-	fmt.Printf("xLambert: %f, yLambert: %f\n", xLambert, yLambert)
-
-	x, y := algo.CaseDepart(xLambert, yLambert, path)
-
-	if x == -1 || y == -1 {
-		fmt.Printf("Erreur sur le calcul de la case départ\n")
-		return
-	}
-
-	fmt.Printf("x: %d, y: %d\n", x, y)
-	mat := algo.CreationMatrice(path)
-	mat2 := algo.PointsAtteignables(3, x, y, mat)
-
-	fullMatrix := algo.NewMatrix(1000)
-
-	for i := range 1000 {
-		for j := range 1000 {
-			fullMatrix.Data[i][j] = mat2[i][j]
-		}
-	}
-
-	fmt.Printf("Altitude : %f\n", mat[x][y])
-
-	fullMatrix = fullMatrix.FindNeighbors(x, y) // On trouve tous les points connectés à la case de départ
-
-	xll, yll, _, _ := findfiles.ReadCoordinateLambert93File(path) // On lit les coordonnées en Lambert93 du coin inférieur gauche de la matrice
-
-	var pointsAffiche []algo.Coordonnee // Liste des points à afficher
-
-	// Parcours de la matrice pour récupérer les coordonnées des points connectés
-	for i := 0; i < 1000; i++ {
-		for j := 0; j < 1000; j++ {
-			if fullMatrix.Data[i][j] != 0 {
-				X := xll + float64(j)*25.0                                                 // Conversion de l'indice de colonne en coordonnée Lambert93
-				Y := (yll + 25000.0) - float64(i)*25.0                                     // Conversion de l'indice de ligne en coordonnée Lambert93
-				lat, lng, _ := algo.FromLambert93ToGpsWgs84(X, Y)                          // Conversion en coordonnées GPS WGS84
-				pointsAffiche = append(pointsAffiche, algo.Coordonnee{Lat: lat, Lng: lng}) // Ajout à la liste des points à afficher
-			}
-		}
-	}
-
-	// Lance un serveur web
-	http.HandleFunc("/points", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json") // On indique que la réponse sera au format JSON
-		json.NewEncoder(w).Encode(pointsAffiche)           // On encode la liste des points en JSON et on l'envoie en réponse
-	})
-
+	// Handler pour la page principale
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		tmpl, err := template.ParseFiles("carte.html") // On charge le fichier HTML
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
+
+		latitude := strings.TrimSpace(r.URL.Query().Get("lat")) // Récupère les paramètres lat, lng et deniv de l'URL, TrimSpace nettoie les espaces inutiles
+		longitude := strings.TrimSpace(r.URL.Query().Get("lng"))
+		denivele_srtg := strings.TrimSpace(r.URL.Query().Get("deniv"))
 
 		// On prépare les données à injecter dans le template
 		data := struct {
@@ -120,7 +56,80 @@ func main() {
 			Lat: latitude,
 			Lng: longitude,
 		}
+
+		if latitude != "" && longitude != "" && denivele_srtg != "" {
+			pointsAffiche = nil // Réinitialise la liste des points à afficher à chaque requête
+
+			path, er := findfiles.GetFileForMyCoordinate(longitude, latitude, folder)
+
+			path = folder + path
+
+			if er != nil {
+				fmt.Println(er)
+				return
+			}
+
+			xLambert, yLambert, er := findfiles.FromGpsWgs84ToLambert93(longitude, latitude)
+
+			if er != nil {
+				fmt.Println(er)
+				return
+			}
+
+			x, y := algo.CaseDepart(xLambert, yLambert, path)
+
+			if x == -1 || y == -1 {
+				fmt.Printf("Erreur sur le calcul de la case départ\n")
+				return
+			}
+
+			denivele, err := strconv.ParseFloat(denivele_srtg, 64)
+			if err != nil {
+				fmt.Println(err)
+				return
+			}
+
+			mat := algo.CreationMatrice(path)
+			mat2 := algo.PointsAtteignables(denivele, x, y, mat)
+
+			fullMatrix := algo.NewMatrix(1000)
+
+			for i := range 1000 {
+				for j := range 1000 {
+					fullMatrix.Data[i][j] = mat2[i][j]
+				}
+			}
+
+			fullMatrix = fullMatrix.FindNeighbors(x, y) // On trouve tous les points connectés à la case de départ
+
+			xll, yll, _, _ := findfiles.ReadCoordinateLambert93File(path) // On lit les coordonnées en Lambert93 du coin inférieur gauche de la matrice
+
+			// Parcours de la matrice pour récupérer les coordonnées des points connectés à afficher
+			for i := 0; i < 1000; i++ {
+				for j := 0; j < 1000; j++ {
+					if fullMatrix.Data[i][j] != 0 {
+						X := xll + float64(j)*25.0                                                 // Conversion de l'indice de colonne en coordonnée Lambert93
+						Y := (yll + 25000.0) - float64(i)*25.0                                     // Conversion de l'indice de ligne en coordonnée Lambert93
+						lat, lng, _ := algo.FromLambert93ToGpsWgs84(X, Y)                          // Conversion en coordonnées GPS WGS84
+						pointsAffiche = append(pointsAffiche, algo.Coordonnee{Lat: lat, Lng: lng}) // Ajout à la liste des points à afficher
+					}
+				}
+			}
+		}
+
+		tmpl, err := template.ParseFiles("carte.html") // On charge le fichier HTML
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
 		tmpl.Execute(w, data) // On exécute le template carte.html avec les données
+	})
+
+	// Lance un serveur web
+	http.HandleFunc("/points", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json") // On indique que la réponse sera au format JSON
+		json.NewEncoder(w).Encode(pointsAffiche)           // On encode la liste des points en JSON et on l'envoie en réponse
 	})
 
 	fmt.Println("Calcul terminé. Préparation de la carte...")
