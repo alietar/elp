@@ -8,6 +8,7 @@ import (
 type Coordonnee struct {
 	Lat float64 `json:"lat"` // gère l'export en JSON
 	Lng float64 `json:"lng"`
+	Size int `json:"size"`
 }
 
 // Convertit des coordonnées Lambert93 en coordonnées GPS WGS84

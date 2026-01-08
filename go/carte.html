@@ -36,8 +36,8 @@
 						data.forEach(p => {
 							// On définit les coins du carré (environ 0.00011 degrés = 12.5 mètres)
 							var bounds = [
-								[p.lat - 0.000117, p.lng - 0.000167], 
-								[p.lat + 0.000117, p.lng + 0.000167]
+								[p.lat - 0.000117*p.size, p.lng - 0.000167*p.size], 
+								[p.lat + 0.000117*p.size, p.lng + 0.000167*p.size]
 							];
 							var rect = L.rectangle(bounds, {color: 'blue', weight: 1, fillOpacity: 0.5}).addTo(map); // Création d'un rectangle pour chaque point, weight = 1 permet que les points restent visibles lorsqu'on dézoome
 							group.addLayer(rect); // On ajoute chaque rectangle au groupe

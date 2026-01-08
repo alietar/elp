@@ -12,6 +12,8 @@ import (
 	"time"
 
 	"github.com/alietar/elp/go/algo"
+	"github.com/alietar/elp/go/tile"
+
 	"github.com/alietar/elp/go/findfiles"
 	// "github.com/alietar/elp/go/server"
 )
@@ -52,9 +54,11 @@ func main() {
 		data := struct {
 			Lat string
 			Lng string
+			Size int
 		}{
 			Lat: latitude,
 			Lng: longitude,
+			
 		}
 
 		if latitude != "" && longitude != "" && denivele_srtg != "" {
@@ -102,16 +106,26 @@ func main() {
 
 			fullMatrix = fullMatrix.FindNeighbors(x, y) // On trouve tous les points connectés à la case de départ
 
+
 			xll, yll, _, _ := findfiles.ReadCoordinateLambert93File(path) // On lit les coordonnées en Lambert93 du coin inférieur gauche de la matrice
+
+						
+			fullMatrixOptimize := tile.OptimizeSquares(fullMatrix.Data,xll,yll,25)
+
 
 			// Parcours de la matrice pour récupérer les coordonnées des points connectés à afficher
 			for i := 0; i < 1000; i++ {
 				for j := 0; j < 1000; j++ {
-					if fullMatrix.Data[i][j] != 0 {
-						X := xll + float64(j)*25.0                                                 // Conversion de l'indice de colonne en coordonnée Lambert93
-						Y := (yll + 25000.0) - float64(i)*25.0                                     // Conversion de l'indice de ligne en coordonnée Lambert93
+					if fullMatrixOptimize.Data[i][j] != 0 {
+						//X := xll + float64(j)*25.0                                                 // Conversion de l'indice de colonne en coordonnée Lambert93
+						//Y := (yll + 25000.0) - float64(i)*25.0                                     // Conversion de l'indice de ligne en coordonnée Lambert93
+						
+						X = fullMatrixOptimize.CenterX
+						Y = fullMatrixOptimize.CenterY
+						size = fullMatrixOptimize.Size
+
 						lat, lng, _ := algo.FromLambert93ToGpsWgs84(X, Y)                          // Conversion en coordonnées GPS WGS84
-						pointsAffiche = append(pointsAffiche, algo.Coordonnee{Lat: lat, Lng: lng}) // Ajout à la liste des points à afficher
+						pointsAffiche = append(pointsAffiche, algo.Coordonnee{Lat: lat, Lng: lng, Size: size}) // Ajout à la liste des points à afficher
 					}
 				}
 			}
