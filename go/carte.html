@@ -26,7 +26,7 @@
 				attribution: '© OpenStreetMap'
 			}).addTo(map);
 
-
+			
 			fetch('/points') // Récupération des points depuis le serveur Go
 				.then(res => res.json()) // Conversion de la réponse en JSON
 				.then(data => {
@@ -54,7 +54,7 @@
 						color: 'red',
 						fillColor: '#f03',
 						fillOpacity: 0.7,
-						weight: 1, 
+						weight: 1,
 						}).addTo(map);
 					
 					};
