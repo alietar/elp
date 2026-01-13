@@ -6,6 +6,8 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+	"io/fs"
+	"path/filepath"
 	"strconv"
 	"strings"
 )
@@ -141,4 +143,49 @@ func GetFileForMyCoordinate(x, y float64, folderPath string) (string, error) {
 	}
 
 	return "", fmt.Errorf("coordinate not found in any file")
+}
+
+
+
+func BuildBDIndex(baseDir string) ([]BDFileInfo, error) {
+
+	var results []BDFileInfo
+
+	err := filepath.WalkDir(baseDir, func(path string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+
+		if d.IsDir() {
+			return nil
+		}
+		
+		if filepath.Ext(d.Name()) != ".asc" {
+			return nil
+		}
+
+
+
+		xll, yll, cell, err := ReadCoordinateLambert93File(path)
+		if err != nil {
+			return fmt.Errorf("erreur lecture %s : %w", path, err)
+		}
+
+		info := BDFileInfo{
+			Path:      filepath.Base(path),
+			XllCorner: xll,
+			YllCorner: yll,
+			CellSize:  cell,
+		}
+
+		results = append(results, info)
+
+		return nil
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	return results, nil
 }

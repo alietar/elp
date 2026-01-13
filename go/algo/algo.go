@@ -1,8 +1,8 @@
 package algo
 
 import (
-	"sync"
 	"fmt"
+	"sync"
 )
 
 func (m *Matrix) FindNeighbors(startX, startY int, wg *sync.WaitGroup, results chan [][]float64, exploreAdj chan [2]float64) {
@@ -21,7 +21,7 @@ func (m *Matrix) FindNeighbors(startX, startY int, wg *sync.WaitGroup, results c
 	}*/
 
 	results <- m.findNeighborsRecursive(result, visited, startX, startY, exploreAdj, wg)
-	
+
 	wg.Done()
 }
 
@@ -29,7 +29,7 @@ func (m *Matrix) findNeighborsRecursive(
 	result [][]float64,
 	visited [][]bool,
 	x, y int,
-	exploreAdj chan[2]float64,
+	exploreAdj chan [2]float64,
 	wg *sync.WaitGroup,
 ) [][]float64 {
 	if m.Data[x][y] == 0 {
@@ -43,18 +43,26 @@ func (m *Matrix) findNeighborsRecursive(
 		var coord [2]float64
 		coord[0] = m.LambertX + float64((x-m.StartX)*25)
 		coord[1] = m.LambertY + float64((y-m.StartY)*25)
-		
-		if x == 0 { coord[0]-=25 }
-		if x == m.Size-1 { coord[0]+=25 }
-		if y ==  0 { coord[1]-=25 }
-		if y == m.Size-1 { coord[1]+=25 }
+
+		if x == 0 {
+			coord[0] -= 25
+		}
+		if x == m.Size-1 {
+			coord[0] += 25
+		}
+		if y == 0 {
+			coord[1] -= 25
+		}
+		if y == m.Size-1 {
+			coord[1] += 25
+		}
 
 		fmt.Println("Reached bounderies")
 		fmt.Printf("x: %d, oldLambert: %f, newLambert: %f\n", x, m.LambertX, coord[0])
 		fmt.Printf("y: %d, oldLambert: %f, newLambert: %f\n", y, m.LambertY, coord[1])
-		 
+
 		wg.Add(1)
-		exploreAdj <- coord 
+		exploreAdj <- coord
 
 		return result
 	}
