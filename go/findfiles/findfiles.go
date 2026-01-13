@@ -108,11 +108,11 @@ func ReadCoordinateLambert93File(fileName string) (float64, float64, float64, er
 	return 0, 0, 0, fmt.Errorf("header incomplete in %s", fileName)
 }
 
-func GetFileForMyCoordinate(x, y float64, folderPath string) (string, error) {
+func GetFileForMyCoordinate(x, y float64, folderPath string) (string, error, float64, float64) {
 	// 1. Liste des fichiers
 	files, err := GetFilesNameFolder(folderPath)
 	if err != nil {
-		return "", err
+		return "", err, -1, -1
 	}
 
 	// 2. Parcours des fichiers
@@ -136,9 +136,9 @@ func GetFileForMyCoordinate(x, y float64, folderPath string) (string, error) {
 
 		// 5. Test d’appartenance
 		if x >= xmin && x <= xmax && y >= ymin && y <= ymax {
-			return file, nil
+			return file, nil, xll, yll
 		}
 	}
 
-	return "", fmt.Errorf("coordinate not found in any file")
+	return "", fmt.Errorf("coordinate not found in any file"), -1, -1
 }
