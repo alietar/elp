@@ -8,7 +8,7 @@ import (
 )
 
 // prend en argument le nom du fichier de BD de départ et les coordonnées x et y du point de départ en lambert et renvoie les indices i et j de la case de départ
-func CaseDepart(x0, y0 float64, cheminFichier string) (i, j int) {
+func CaseDepart(xLambert, yLambert float64, cheminFichier string) (xMatrix, yMatrix int) {
 	donnees, err := os.ReadFile(cheminFichier) // lire le fichier en question, data est en byte
 
 	if err != nil {
@@ -21,18 +21,19 @@ func CaseDepart(x0, y0 float64, cheminFichier string) (i, j int) {
 	elem := strings.Fields(string(donnees)) // on sépare chaque element du fichier (sépare dès qu'il y a un espace ou retour à la ligne)
 
 	// les coordonnées en lambert de la case d'indice [1000][0]
-	x, err1 := strconv.ParseFloat(elem[5], 64) // conversion de string en float64
-	y, err2 := strconv.ParseFloat(elem[7], 64) // conversion de string en float64
+	xLL, err1 := strconv.ParseFloat(elem[5], 64) // conversion de string en float64
+	yLL, err2 := strconv.ParseFloat(elem[7], 64) // conversion de string en float64
 
 	if err1 != nil || err2 != nil {
 		fmt.Println("Erreur lors de la récupération de des coordonnées", err)
 		return -1, -1
 	}
 
-	j = int((x0 - x) / 25) // car entre chaque indice il y a 25m
-	i = int(999 - (y0-y)/25)
 
-	if i > 1000 || j > 1000 {
+	xMatrix = int((xLambert - xLL)/25) // car entre chaque indice il y a 25m
+	yMatrix = 1000-int((yLambert - yLL)/25)
+
+	if xMatrix >= 1000 || yMatrix >= 1000 {
 		fmt.Println("Coordonnées lambert en dehors de la case")
 		return -1, -1
 	}

@@ -1,31 +1,21 @@
-package algo
+package tileutils
 
-import (
-	"fmt"
-)
+const TILE_FOLDER_PATH = "./bd/1_DONNEES_LIVRAISON_2024-02-00018/BDALTIV2_MNT_25M_ASC_LAMB93_IGN69_D069/"
 
-type Matrix struct {
-	Size int
-	Data [][]float64
-	LambertX float64
-	LambertY float64
-	StartX int
-	StartY int
+const MATRIX_SIZE = 1000
+
+type Tile struct {
+	XLambertLL float64
+	YLambertLL float64
+	Lat        float64
+	Long       float64
+
+	Altitudes            *[MATRIX_SIZE][MATRIX_SIZE]float64
+	PotentiallyReachable *[MATRIX_SIZE][MATRIX_SIZE]bool
+	Reachable            *[MATRIX_SIZE][MATRIX_SIZE]bool
 }
 
-func NewMatrix(size int) Matrix {
-	data := make([][]float64, size)
-
-	for i := range data {
-		data[i] = make([]float64, size)
-	}
-
-	return Matrix{
-		Size: size,
-		Data: data,
-	}
-}
-
+/*
 func (m *Matrix) Show() {
 	for i := 0; i < m.Size; i++ {
 		for j := 0; j < m.Size; j++ {
@@ -109,5 +99,4 @@ func Min(a, b int) int {
 	} else {
 		return b
 	}
-
-}
+}*/

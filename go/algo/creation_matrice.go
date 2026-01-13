@@ -28,7 +28,7 @@ func CreationMatrice(cheminFichier string) (matrice [1000][1000]float64) {
 			if err != nil {
 				fmt.Println("Erreur lors de la récupération de l'altitude", err)
 			}
-			matrice[i][j] = alt
+			matrice[j][i] = alt
 			k += 1
 		}
 	}
