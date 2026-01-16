@@ -6,7 +6,6 @@ import (
 	"net"
 )
 
-// StartTCPServer démarre un serveur TCP et envoie la structure fournie à chaque client
 func StartTCPServer(address string, data any) error {
 	listener, err := net.Listen("tcp", address)
 	if err != nil {
