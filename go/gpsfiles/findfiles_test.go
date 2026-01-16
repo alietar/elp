@@ -1,4 +1,4 @@
-package findfiles
+package gpsfiles
 
 import (
 	"fmt"
@@ -52,7 +52,7 @@ func TestGetFileForMyCoordinate(t *testing.T) {
 	folderPath := "/home/leopold/Documents/3TC/ELP/GO/elp/go/bd/1_DONNEES_LIVRAISON_2024-02-00018/BDALTIV2_MNT_25M_ASC_LAMB93_IGN69_D069"
 
 	longitude := "4.4483937"
-	latitude  := "45.4922389"
+	latitude := "45.4922389"
 
 	file, err := GetFileForMyCoordinate(longitude, latitude, folderPath)
 	if err != nil {
@@ -63,7 +63,6 @@ func TestGetFileForMyCoordinate(t *testing.T) {
 	fmt.Println("Fichier contenant la coordonnée :")
 	fmt.Println(file)
 }
-
 
 func TestBuildBDIndex(t *testing.T) {
 
@@ -98,5 +97,3 @@ func TestBuildBDIndex(t *testing.T) {
 		)
 	}
 }
-
-

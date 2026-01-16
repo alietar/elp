@@ -1,4 +1,4 @@
-package findfiles
+package gpsfiles
 
 type BDFileInfo struct {
 	Path      string
