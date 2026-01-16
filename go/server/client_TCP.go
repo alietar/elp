@@ -6,7 +6,7 @@ import (
 	"net"
 )
 
-// ReceiveTCP se connecte à un serveur TCP et décode un JSON dans target
+// ReceiveTCP se connecte à un serveur TCP sur l'adresse qu'il veut et décode un JSON dans target
 func ReceiveTCP(address string, target any) error {
 	conn, err := net.Dial("tcp", address)
 	if err != nil {
