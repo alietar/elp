@@ -16,7 +16,7 @@ func ReceiveTCP(address string, target any) error {
 
 	reader := bufio.NewReader(conn)
 
-	// Lecture jusqu'au délimiteur (\n)
+	// Lecture jusqu'au \n
 	line, err := reader.ReadString('\n')
 	if err != nil {
 		return err
