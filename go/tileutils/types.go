@@ -15,6 +15,12 @@ type Tile struct {
 	Reachable            *[MATRIX_SIZE][MATRIX_SIZE]bool
 }
 
+type Wgs84Square struct {
+	Size      int     // taille du carré
+	CenterLng float64 // Lambert X
+	CenterLat float64 // Lambert Y
+}
+
 /*
 func (m *Matrix) Show() {
 	for i := 0; i < m.Size; i++ {

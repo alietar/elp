@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+	<html>
+	<head>
+		<title>Zone atteignable</title>
+		<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" /> <!-- // Réseau de Diffusion de Contenu Leaflet qui est une bibliothèque JS pour les cartes interactives -->
+		<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script> <!-- // Bibliothèque JS Leaflet -->
+		<style>#map { height: 100vh; width: 100%; }</style>
+	</head>
+	<body>
+		<div id="choice" style="position: absolute; top: 10px; left: 50px; z-index: 1000; background: white; padding: 10px; border-radius: 5px; box-shadow: 0 0 10px rgba(0,0,0,0.2);">
+			<form>
+				<input type="number" step=0.0000001 value="45.7838052" name="lat" placeholder="Latitude" style="width: 80px;">
+				<input type="number" step=0.0000001 name="lng" value="4.871928" placeholder="Longitude" style="width: 80px;">
+				<input type="number" step=0.01 name="deniv" min=0 value="0.3" placeholder="Dénivelé" style="width: 80px;">
+				<button type="submit">Calculer la zone atteignable</button>
+			</form>
+		</div>
+		<div id="map"></div>
+		<script>
+			const form = document.querySelector("form");
+			
+			var map = L.map('map').setView(["45.75", "4.84"], 12); // Initialisation de la carte centrée sur les coordonnées données avec un niveau de zoom de 15 (0 = monde entier)
+			var group = new L.featureGroup();
+
+			// Ajout de OpenStreetMap qui est une source de tuiles cartographiques
+			L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+				attribution: '© OpenStreetMap'
+			}).addTo(map);
+
+			async function sendData() {
+				// Associate the FormData object with the form element
+				const formData = new FormData(form);
+					
+				group.clearLayers();
+
+				var object = {};
+				formData.forEach((value, key) => object[key] = parseFloat(value));
+				var json = JSON.stringify(object);
+
+				try {
+					const response = await fetch("/points", {
+						method: "POST",
+						body: json 
+					});
+					
+					data = await response.json();
+
+					data.forEach(p => {
+						// On définit les coins du carré (environ 0.00011 degrés = 12.5 mètres)
+						var bounds = [
+							[p.CenterLng - 0.000117*p.Size, p.CenterLat - 0.000167*p.Size], 
+							[p.CenterLng + 0.000117*p.Size, p.CenterLat + 0.000167*p.Size]
+						];
+						
+						var rect = L.rectangle(bounds, {color: 'blue', weight: 1, fillOpacity: 0.5, stroke: false}); // Création d'un rectangle pour chaque point, weight = 1 permet que les points restent visibles lorsqu'on dézoome
+						group.addLayer(rect); // On ajoute chaque rectangle au groupe
+					});
+
+					// POINT DE DÉPART EN ROUGE
+					L.circle([formData.get("lat"), formData.get("lng")], {
+						radius: 15,
+						color: 'red',
+						fillColor: '#f03',
+						fillOpacity: 0.7,
+						weight: 1,
+					}).addTo(group);
+
+
+					group.addTo(map)
+					
+					map.fitBounds(group.getBounds()); // On ajuste la vue pour inclure tous les points*/
+				} catch (e) {
+					console.error(e);
+				}
+			}
+
+			// Take over form submission
+			form.addEventListener("submit", (event) => {
+				event.preventDefault();
+				sendData();
+			});
+		</script>
+	</body>
+	</html>

@@ -7,15 +7,14 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/alietar/elp/go/algo"
-	"github.com/alietar/elp/go/findfiles"
+	"github.com/alietar/elp/go/gpsfiles"
 )
 
 func NewTileFromLambert(xLambert, yLambert float64) (*Tile, int, int) {
 	var t Tile
 
 	// Getting the right file
-	path, er, xLambertLL, yLambertLL := findfiles.GetFileForMyCoordinate(xLambert, yLambert, TILE_FOLDER_PATH)
+	path, er, xLambertLL, yLambertLL := gpsfiles.GetFileForMyCoordinate(xLambert, yLambert, TILE_FOLDER_PATH)
 
 	t.XLambertLL = xLambertLL
 	t.YLambertLL = yLambertLL
@@ -29,7 +28,7 @@ func NewTileFromLambert(xLambert, yLambert float64) (*Tile, int, int) {
 
 	fmt.Printf("Tile is: %s\n", path)
 
-	x, y := algo.CaseDepart(xLambert, yLambert, path)
+	x, y := LambertToIndices(t.XLambertLL, t.YLambertLL, xLambert, yLambert)
 
 	if x == -1 || y == -1 {
 		fmt.Printf("Erreur sur le calcul de la case départ\n")
@@ -40,11 +39,11 @@ func NewTileFromLambert(xLambert, yLambert float64) (*Tile, int, int) {
 	t.CreateMatrix(path)
 
 	// startAltitude := (*t.Altitudes)[x][y]
-	startAltitude := 169.75
+	// startAltitude := 169.75
 
-	t.CreatePotentiallyReachable(5, startAltitude)
+	// t.CreatePotentiallyReachable(5, startAltitude)
 
-	fmt.Printf("Start Altitude : %f\n", startAltitude)
+	// fmt.Printf("Start Altitude : %f\n", startAltitude)
 
 	return &t, x, y
 }
@@ -94,4 +93,17 @@ func (t *Tile) CreatePotentiallyReachable(d float64, startAltitude float64) {
 
 	t.PotentiallyReachable = &potentiallyReachable
 	t.Reachable = &reachable
+}
+
+// prend en argument le nom du fichier de BD de départ et les coordonnées x et y du point de départ en lambert et renvoie les indices i et j de la case de départ
+func LambertToIndices(xLL, yLL, xLambert, yLambert float64) (xMatrix, yMatrix int) {
+	xMatrix = int((xLambert - xLL) / 25) // car entre chaque indice il y a 25m
+	yMatrix = 1000 - int((yLambert-yLL)/25)
+
+	if xMatrix >= 1000 || yMatrix >= 1000 {
+		fmt.Println("Coordonnées lambert en dehors de la case")
+		return -1, -1
+	}
+
+	return
 }
