@@ -6,6 +6,7 @@ import (
 	"net"
 )
 
+// lance une session TCP sur l'adresse que l'on veut et on envoie la data qu'on veut 
 func StartTCPServer(address string, data any) error {
 	listener, err := net.Listen("tcp", address)
 	if err != nil {
