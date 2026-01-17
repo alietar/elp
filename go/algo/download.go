@@ -10,7 +10,7 @@ import (
 )
 
 // prend en paramètres le numéro de département et télécharge la base de données correspondant
-func downloadUnzipDB(depart int) string {
+func DownloadUnzipDB(depart int) string {
 
 	err := os.MkdirAll("bd", 0755) // Assure que le dossier "bd" existe (le crée si nécessaire) ; err est nil si le dossier est prêt
 
@@ -114,7 +114,7 @@ func downloadUnzipDB(depart int) string {
 	// Décompression du fichier .7z
 	fmt.Println("Décompression du fichier...")
 
-	cmd := exec.Command("7z", "e", nomFichier, "-obd", "-y", "-r", "*.asc") // commande pour extraire uniquement les fichiers .asc dans le dossier bd (e pour extraire, o pour choisir le répertoire, y pour répondre oui à toutes les questions si besoin, r pour parcourir tous les sous-dossiers du .7z)
+	cmd := exec.Command("7zz", "e", nomFichier, "-obd", "-y", "-r", "*.asc") // commande pour extraire uniquement les fichiers .asc dans le dossier bd (e pour extraire, o pour choisir le répertoire, y pour répondre oui à toutes les questions si besoin, r pour parcourir tous les sous-dossiers du .7z)
 
 	// On lance la commande et on attend la fin
 	err = cmd.Run()
@@ -129,12 +129,12 @@ func downloadUnzipDB(depart int) string {
 
 }
 
-func downloadAllDepartements() {
+func DownloadAllDepartements() {
 	for compteur := 1; compteur < 96; compteur++ { // On ne s'occupe que des départements métropolitains (1 à 95)
 		if compteur == 20 { // On ignore le 20 car c'est la Corse (2A et 2B)
 			continue
 		}
 		fmt.Printf("Département %02d en cours de téléchargement\n", compteur)
-		downloadUnzipDB(compteur)
+		DownloadUnzipDB(compteur)
 	}
 }
