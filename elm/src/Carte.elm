@@ -5,6 +5,7 @@ port module Carte exposing
     , initMap
     , drawSquare
     , autoView
+    , clearSquares
     )
 
 import Html exposing (Html, div)
@@ -22,6 +23,8 @@ port drawSquare :
     -> Cmd msg
 
 port autoView : () -> Cmd msg
+
+port clearSquares : () -> Cmd msg
 
 type alias Model =
     ()

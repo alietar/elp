@@ -1,9 +1,7 @@
 let map = null;
-let squareLayers = [];
-let pendingBoundsList = [];
+let squaresGroup = L.featureGroup();
 
 function initMap(app) {
-
   app.ports.initMap.subscribe(function (config) {
     map = L.map("map").setView(
       [config.lat, config.lon],
@@ -13,30 +11,35 @@ function initMap(app) {
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
       attribution: "© OpenStreetMap contributors"
     }).addTo(map);
+    
+    squaresGroup.addTo(map)
+  });
 
-    // Dessiner les rectangles reçus avant init
-    pendingBoundsList.forEach(drawSquare);
-    pendingBoundsList = [];
+  app.ports.clearSquares.subscribe(function () {
+    squaresGroup.clearLayers();
   });
 
   app.ports.drawSquare.subscribe(function (bounds) {
-    if (!map) {
-      pendingBoundsList.push(bounds);
-      return;
-    }
-
     drawSquare(bounds);
+  });
+
+  app.ports.autoView.subscribe(function () {
+    setTimeout(() => {
+        if (squaresGroup.getLayers().length > 0 && map) {
+            map.fitBounds(squaresGroup.getBounds(), { padding: [50, 50] });
+        } else {
+            console.warn("Pas de zoom : groupe vide ou carte non prête");
+        }
+    }, 100);
   });
 }
 
 function drawSquare(bounds) {
-  const rect = L.rectangle(
-    [
-      [ bounds.southWest[1], bounds.southWest[0] ],
-      [ bounds.northEast[1], bounds.northEast[0] ]
-    ],
-    { color: "blue", weight: 2, fillOpacity: 0.2 }
-  ).addTo(map);
-
-  squareLayers.push(rect);
+    L.rectangle(
+      [
+        [ bounds.southWest[1], bounds.southWest[0] ],
+        [ bounds.northEast[1], bounds.northEast[0] ]
+      ],
+      { color: "blue", weight: 2, fillOpacity: 0.5, stroke: false }
+    ).addTo(squaresGroup);
 }

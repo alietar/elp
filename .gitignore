@@ -36,3 +36,5 @@ db/
 # .vscode/
 
 elm-stuff/
+
+elm/elm.js

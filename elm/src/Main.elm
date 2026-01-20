@@ -78,13 +78,13 @@ update msg model =
                         drawCmds =
                             List.map Carte.drawSquare boundsList
 
-                        zoomCmd =
-                            Carte.autoView ()
+                        zoomCmd = Carte.autoView ()
+                        clearCmd = Carte.clearSquares ()
 
                         
                     in
                     ( { model | status = "Succès : " ++ String.fromInt (List.length squares) ++ " carrés affichés." }
-                    , Cmd.batch (drawCmds ++ [ zoomCmd ])
+                    , Cmd.batch ( clearCmd :: drawCmds ++ [ zoomCmd ])
                     )
 
                 Err _ ->
