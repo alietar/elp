@@ -23,12 +23,11 @@ type alias Bounds =
 
 lngFactor : Float
 lngFactor =
-    0.000117
-
+    0.000167
 
 latFactor : Float
 latFactor =
-    0.000167
+    0.000117
 
 
 -- CALCUL DU CARRÉ

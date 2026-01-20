@@ -1,62 +1,118 @@
 module Main exposing (main)
 
 import Browser
-import Html exposing (Html)
+import Html exposing (Html, div, button, text, p)
+import Html.Events exposing (onClick)
+import Http
 import Carte
 import Draw_square
+import UserApi
 
 
 -- MODEL
 
 type alias Model =
-    { carte : Carte.Model }
-
-
--- DONNÉES DE TEST : PLUSIEURS CARRÉS
-
-squaresParams : List Draw_square.Params
-squaresParams =
-    [ { size = 20, centerLng = 2.35, centerLat = 48.85 }   -- Paris
-    , { size = 30, centerLng = 5.37, centerLat = 43.29 }   -- Marseille
-    , { size = 40, centerLng = -1.55, centerLat = 44.83 }  -- Bordeaux
-    ] 
-
--- Il faut implanter ici le raisonemment sur nos carrés
+    { carte : Carte.Model
+    , status : String
+    }
 
 
 -- INIT
 
-init : () -> ( Model, Cmd msg )
+init : () -> ( Model, Cmd Msg )
 init _ =
     let
         ( carteModel, carteCmd ) =
             Carte.init
-
-        boundsList =
-            List.map Draw_square.computeBounds squaresParams
-
-        drawCmds =
-            List.map Carte.drawSquare boundsList
     in
-    ( { carte = carteModel }
-    , Cmd.batch (carteCmd :: drawCmds)
+    ( { carte = carteModel
+      , status = "Prêt à charger les carrés."
+      }
+    , carteCmd -- On initialise seulement la carte, pas de carrés au démarrage
     )
+
+
+-- MSG
+
+type Msg
+    = ClickFetch
+    | GotSquares (Result Http.Error UserApi.ServerResponse)
+
+
+-- UPDATE
+
+update : Msg -> Model -> ( Model, Cmd Msg )
+update msg model =
+    case msg of
+        ClickFetch ->
+            let
+                -- Coordonnées fixes pour l'instant, comme demandé
+                fixedData : UserApi.StartPointData
+                fixedData =
+                    { lat = 45.7838052
+                    , lng = 4.871928
+                    , deniv = 0.3
+                    }
+            in
+            ( { model | status = "Chargement en cours..." }
+            , UserApi.fetchSquares fixedData GotSquares
+            )
+
+        GotSquares result ->
+            case result of
+                Ok squares ->
+                    let
+                        -- 1. On transforme le type UserApi.Square vers Draw_square.Params
+                        toParams : UserApi.Square -> Draw_square.Params
+                        toParams sq =
+                            { size = sq.size
+                            , centerLat = sq.centerLat
+                            , centerLng = sq.centerLng
+                            }
+
+                        -- 2. On calcule les bornes (Bounds) pour chaque carré
+                        boundsList =
+                            List.map (toParams >> Draw_square.computeBounds) squares
+
+                        -- 3. On crée une commande pour dessiner chaque carré
+                        drawCmds =
+                            List.map Carte.drawSquare boundsList
+
+                        zoomCmd =
+                            Carte.autoView ()
+
+                        
+                    in
+                    ( { model | status = "Succès : " ++ String.fromInt (List.length squares) ++ " carrés affichés." }
+                    , Cmd.batch (drawCmds ++ [ zoomCmd ])
+                    )
+
+                Err _ ->
+                    ( { model | status = "Erreur lors de la récupération des données." }
+                    , Cmd.none
+                    )
 
 
 -- VIEW
 
-view : Model -> Html msg
+view : Model -> Html Msg
 view model =
-    Carte.view model.carte
+    div []
+        [ div [  ]
+            [ button [ onClick ClickFetch ] [ text "Récupérer et afficher les carrés" ]
+            , p [] [ text model.status ]
+            ]
+        , Carte.view model.carte
+        ]
 
 
 -- MAIN
 
-main : Program () Model msg
+main : Program () Model Msg
 main =
     Browser.element
         { init = init
         , view = view
-        , update = \_ model -> ( model, Cmd.none )
+        , update = update
         , subscriptions = \_ -> Sub.none
         }

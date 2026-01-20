@@ -4,6 +4,7 @@ port module Carte exposing
     , view
     , initMap
     , drawSquare
+    , autoView
     )
 
 import Html exposing (Html, div)
@@ -20,6 +21,7 @@ port drawSquare :
     Draw_square.Bounds
     -> Cmd msg
 
+port autoView : () -> Cmd msg
 
 type alias Model =
     ()
