@@ -5379,11 +5379,12 @@ var $author$project$Carte$init = _Utils_Tuple2(
 	$author$project$Carte$initMap(
 		{lat: 46.603354, lon: 1.888334, zoom: 6}));
 var $author$project$Main$init = function (_v0) {
+	var initialForm = {d: '', lat: '', _long: '', typeError: false, validate: false};
 	var _v1 = $author$project$Carte$init;
 	var carteModel = _v1.a;
 	var carteCmd = _v1.b;
 	return _Utils_Tuple2(
-		{carte: carteModel, status: 'Prêt à charger les carrés.'},
+		{carte: carteModel, form: initialForm, status: 'Prêt à charger les carrés.'},
 		carteCmd);
 };
 var $elm$core$Platform$Sub$batch = _Platform_batch;
@@ -5398,6 +5399,11 @@ var $author$project$Carte$autoView = _Platform_outgoingPort(
 		return $elm$json$Json$Encode$null;
 	});
 var $elm$core$Platform$Cmd$batch = _Platform_batch;
+var $author$project$Carte$clearSquares = _Platform_outgoingPort(
+	'clearSquares',
+	function ($) {
+		return $elm$json$Json$Encode$null;
+	});
 var $elm$core$Basics$composeR = F3(
 	function (f, g, x) {
 		return g(
@@ -6285,15 +6291,79 @@ var $author$project$UserApi$fetchSquares = F2(
 			});
 	});
 var $elm$core$Platform$Cmd$none = $elm$core$Platform$Cmd$batch(_List_Nil);
+var $elm$core$String$toFloat = _String_toFloat;
 var $author$project$Main$update = F2(
 	function (msg, model) {
-		if (msg.$ === 'ClickFetch') {
-			var fixedData = {deniv: 0.3, lat: 45.7838052, lng: 4.871928};
-			return _Utils_Tuple2(
-				_Utils_update(
-					model,
-					{status: 'Chargement en cours...'}),
-				A2($author$project$UserApi$fetchSquares, fixedData, $author$project$Main$GotSquares));
+		if (msg.$ === 'FormMsg') {
+			var interfaceMsg = msg.a;
+			switch (interfaceMsg.$) {
+				case 'Lat':
+					var val = interfaceMsg.a;
+					var oldForm = model.form;
+					return _Utils_Tuple2(
+						_Utils_update(
+							model,
+							{
+								form: _Utils_update(
+									oldForm,
+									{lat: val, typeError: false, validate: false})
+							}),
+						$elm$core$Platform$Cmd$none);
+				case 'Long':
+					var val = interfaceMsg.a;
+					var oldForm = model.form;
+					return _Utils_Tuple2(
+						_Utils_update(
+							model,
+							{
+								form: _Utils_update(
+									oldForm,
+									{_long: val, typeError: false, validate: false})
+							}),
+						$elm$core$Platform$Cmd$none);
+				case 'Deniv':
+					var val = interfaceMsg.a;
+					var oldForm = model.form;
+					return _Utils_Tuple2(
+						_Utils_update(
+							model,
+							{
+								form: _Utils_update(
+									oldForm,
+									{d: val, typeError: false, validate: false})
+							}),
+						$elm$core$Platform$Cmd$none);
+				default:
+					var maybeLng = $elm$core$String$toFloat(model.form._long);
+					var maybeLat = $elm$core$String$toFloat(model.form.lat);
+					var maybeDeniv = $elm$core$String$toFloat(model.form.d);
+					var _v2 = _Utils_Tuple3(maybeLat, maybeLng, maybeDeniv);
+					if (((_v2.a.$ === 'Just') && (_v2.b.$ === 'Just')) && (_v2.c.$ === 'Just')) {
+						var lat = _v2.a.a;
+						var lng = _v2.b.a;
+						var deniv = _v2.c.a;
+						var oldForm = model.form;
+						var newForm = _Utils_update(
+							oldForm,
+							{typeError: false, validate: true});
+						var apiData = {deniv: deniv, lat: lat, lng: lng};
+						return _Utils_Tuple2(
+							_Utils_update(
+								model,
+								{form: newForm, status: 'Chargement...'}),
+							A2($author$project$UserApi$fetchSquares, apiData, $author$project$Main$GotSquares));
+					} else {
+						var oldForm = model.form;
+						var newForm = _Utils_update(
+							oldForm,
+							{typeError: true, validate: false});
+						return _Utils_Tuple2(
+							_Utils_update(
+								model,
+								{form: newForm, status: 'Erreur de saisie.'}),
+							$elm$core$Platform$Cmd$none);
+					}
+			}
 		} else {
 			var result = msg.a;
 			if (result.$ === 'Ok') {
@@ -6302,6 +6372,7 @@ var $author$project$Main$update = F2(
 				var toParams = function (sq) {
 					return {centerLat: sq.centerLat, centerLng: sq.centerLng, size: sq.size};
 				};
+				var clearCmd = $author$project$Carte$clearSquares(_Utils_Tuple0);
 				var boundsList = A2(
 					$elm$core$List$map,
 					A2($elm$core$Basics$composeR, toParams, $author$project$Draw_square$computeBounds),
@@ -6312,13 +6383,16 @@ var $author$project$Main$update = F2(
 						model,
 						{
 							status: 'Succès : ' + ($elm$core$String$fromInt(
-								$elm$core$List$length(squares)) + ' carrés affichés.')
+								$elm$core$List$length(squares)) + ' carrés.')
 						}),
 					$elm$core$Platform$Cmd$batch(
-						_Utils_ap(
-							drawCmds,
-							_List_fromArray(
-								[zoomCmd]))));
+						A2(
+							$elm$core$List$cons,
+							clearCmd,
+							_Utils_ap(
+								drawCmds,
+								_List_fromArray(
+									[zoomCmd])))));
 			} else {
 				return _Utils_Tuple2(
 					_Utils_update(
@@ -6328,9 +6402,49 @@ var $author$project$Main$update = F2(
 			}
 		}
 	});
-var $author$project$Main$ClickFetch = {$: 'ClickFetch'};
-var $elm$html$Html$button = _VirtualDom_node('button');
+var $author$project$Main$FormMsg = function (a) {
+	return {$: 'FormMsg', a: a};
+};
 var $elm$html$Html$div = _VirtualDom_node('div');
+var $author$project$Interface$Deniv = function (a) {
+	return {$: 'Deniv', a: a};
+};
+var $author$project$Interface$Lat = function (a) {
+	return {$: 'Lat', a: a};
+};
+var $author$project$Interface$Long = function (a) {
+	return {$: 'Long', a: a};
+};
+var $author$project$Interface$Validate = {$: 'Validate'};
+var $elm$html$Html$button = _VirtualDom_node('button');
+var $elm$virtual_dom$VirtualDom$style = _VirtualDom_style;
+var $elm$html$Html$Attributes$style = $elm$virtual_dom$VirtualDom$style;
+var $author$project$Interface$buttonStyle = _List_fromArray(
+	[
+		A2($elm$html$Html$Attributes$style, 'background-color', '#4a90e2'),
+		A2($elm$html$Html$Attributes$style, 'color', 'white'),
+		A2($elm$html$Html$Attributes$style, 'border', 'none'),
+		A2($elm$html$Html$Attributes$style, 'padding', '12px'),
+		A2($elm$html$Html$Attributes$style, 'border-radius', '4px'),
+		A2($elm$html$Html$Attributes$style, 'cursor', 'pointer'),
+		A2($elm$html$Html$Attributes$style, 'font-weight', 'bold')
+	]);
+var $elm$html$Html$h1 = _VirtualDom_node('h1');
+var $author$project$Interface$inputContainerStyle = _List_fromArray(
+	[
+		A2($elm$html$Html$Attributes$style, 'position', 'fixed'),
+		A2($elm$html$Html$Attributes$style, 'left', '50px'),
+		A2($elm$html$Html$Attributes$style, 'bottom', '50px'),
+		A2($elm$html$Html$Attributes$style, 'z-index', '1000'),
+		A2($elm$html$Html$Attributes$style, 'display', 'flex'),
+		A2($elm$html$Html$Attributes$style, 'flex-direction', 'column'),
+		A2($elm$html$Html$Attributes$style, 'gap', '15px'),
+		A2($elm$html$Html$Attributes$style, 'background', 'white'),
+		A2($elm$html$Html$Attributes$style, 'padding', '20px'),
+		A2($elm$html$Html$Attributes$style, 'border-radius', '8px'),
+		A2($elm$html$Html$Attributes$style, 'box-shadow', '0 4px 6px rgba(0,0,0,0.1)'),
+		A2($elm$html$Html$Attributes$style, 'width', '200px')
+	]);
 var $elm$virtual_dom$VirtualDom$Normal = function (a) {
 	return {$: 'Normal', a: a};
 };
@@ -6348,9 +6462,41 @@ var $elm$html$Html$Events$onClick = function (msg) {
 		'click',
 		$elm$json$Json$Decode$succeed(msg));
 };
-var $elm$html$Html$p = _VirtualDom_node('p');
 var $elm$virtual_dom$VirtualDom$text = _VirtualDom_text;
 var $elm$html$Html$text = $elm$virtual_dom$VirtualDom$text;
+var $elm$html$Html$input = _VirtualDom_node('input');
+var $elm$html$Html$Events$alwaysStop = function (x) {
+	return _Utils_Tuple2(x, true);
+};
+var $elm$virtual_dom$VirtualDom$MayStopPropagation = function (a) {
+	return {$: 'MayStopPropagation', a: a};
+};
+var $elm$html$Html$Events$stopPropagationOn = F2(
+	function (event, decoder) {
+		return A2(
+			$elm$virtual_dom$VirtualDom$on,
+			event,
+			$elm$virtual_dom$VirtualDom$MayStopPropagation(decoder));
+	});
+var $elm$json$Json$Decode$at = F2(
+	function (fields, decoder) {
+		return A3($elm$core$List$foldr, $elm$json$Json$Decode$field, decoder, fields);
+	});
+var $elm$json$Json$Decode$string = _Json_decodeString;
+var $elm$html$Html$Events$targetValue = A2(
+	$elm$json$Json$Decode$at,
+	_List_fromArray(
+		['target', 'value']),
+	$elm$json$Json$Decode$string);
+var $elm$html$Html$Events$onInput = function (tagger) {
+	return A2(
+		$elm$html$Html$Events$stopPropagationOn,
+		'input',
+		A2(
+			$elm$json$Json$Decode$map,
+			$elm$html$Html$Events$alwaysStop,
+			A2($elm$json$Json$Decode$map, tagger, $elm$html$Html$Events$targetValue)));
+};
 var $elm$json$Json$Encode$string = _Json_wrap;
 var $elm$html$Html$Attributes$stringProperty = F2(
 	function (key, string) {
@@ -6359,6 +6505,89 @@ var $elm$html$Html$Attributes$stringProperty = F2(
 			key,
 			$elm$json$Json$Encode$string(string));
 	});
+var $elm$html$Html$Attributes$placeholder = $elm$html$Html$Attributes$stringProperty('placeholder');
+var $elm$html$Html$Attributes$type_ = $elm$html$Html$Attributes$stringProperty('type');
+var $elm$html$Html$Attributes$value = $elm$html$Html$Attributes$stringProperty('value');
+var $author$project$Interface$viewInput = F4(
+	function (t, p, v, toMsg) {
+		return A2(
+			$elm$html$Html$input,
+			_List_fromArray(
+				[
+					$elm$html$Html$Attributes$type_(t),
+					$elm$html$Html$Attributes$placeholder(p),
+					$elm$html$Html$Attributes$value(v),
+					$elm$html$Html$Events$onInput(toMsg)
+				]),
+			_List_Nil);
+	});
+var $author$project$Interface$viewValidation = function (model) {
+	return model.typeError ? A2(
+		$elm$html$Html$div,
+		_List_fromArray(
+			[
+				A2($elm$html$Html$Attributes$style, 'color', 'red'),
+				A2($elm$html$Html$Attributes$style, 'font-size', '13px'),
+				A2($elm$html$Html$Attributes$style, 'text-align', 'center')
+			]),
+		_List_fromArray(
+			[
+				$elm$html$Html$text('Veuillez entrer des données valides')
+			])) : $elm$html$Html$text('');
+};
+var $author$project$Interface$mainView = function (model) {
+	return A2(
+		$elm$html$Html$div,
+		_List_Nil,
+		_List_fromArray(
+			[
+				A2(
+				$elm$html$Html$div,
+				$author$project$Interface$inputContainerStyle,
+				_List_fromArray(
+					[
+						A2(
+						$elm$html$Html$h1,
+						_List_fromArray(
+							[
+								A2($elm$html$Html$Attributes$style, 'color', '#2c3e50'),
+								A2($elm$html$Html$Attributes$style, 'font-family', 'Segoe UI, sans-serif'),
+								A2($elm$html$Html$Attributes$style, 'font-size', '20px'),
+								A2($elm$html$Html$Attributes$style, 'text-align', 'center'),
+								A2($elm$html$Html$Attributes$style, 'margin-top', '0')
+							]),
+						_List_fromArray(
+							[
+								$elm$html$Html$text('Calculateur de Zone Atteignable')
+							])),
+						A4($author$project$Interface$viewInput, 'text', 'Latitude', model.lat, $author$project$Interface$Lat),
+						A4($author$project$Interface$viewInput, 'text', 'Longitude', model._long, $author$project$Interface$Long),
+						A4($author$project$Interface$viewInput, 'text', 'Dénivelé', model.d, $author$project$Interface$Deniv),
+						A2(
+						$elm$html$Html$button,
+						A2(
+							$elm$core$List$cons,
+							$elm$html$Html$Events$onClick($author$project$Interface$Validate),
+							_Utils_ap(
+								$author$project$Interface$buttonStyle,
+								_List_fromArray(
+									[
+										A2(
+										$elm$html$Html$Attributes$style,
+										'background-color',
+										model.validate ? '#27ae60' : '#4a90e2')
+									]))),
+						_List_fromArray(
+							[
+								$elm$html$Html$text(
+								model.validate ? 'Calcul en cours...' : 'Calculer la zone')
+							])),
+						$author$project$Interface$viewValidation(model)
+					]))
+			]));
+};
+var $elm$virtual_dom$VirtualDom$map = _VirtualDom_map;
+var $elm$html$Html$map = $elm$virtual_dom$VirtualDom$map;
 var $elm$html$Html$Attributes$id = $elm$html$Html$Attributes$stringProperty('id');
 var $author$project$Carte$view = function (_v0) {
 	return A2(
@@ -6376,28 +6605,9 @@ var $author$project$Main$view = function (model) {
 		_List_fromArray(
 			[
 				A2(
-				$elm$html$Html$div,
-				_List_Nil,
-				_List_fromArray(
-					[
-						A2(
-						$elm$html$Html$button,
-						_List_fromArray(
-							[
-								$elm$html$Html$Events$onClick($author$project$Main$ClickFetch)
-							]),
-						_List_fromArray(
-							[
-								$elm$html$Html$text('Récupérer et afficher les carrés')
-							])),
-						A2(
-						$elm$html$Html$p,
-						_List_Nil,
-						_List_fromArray(
-							[
-								$elm$html$Html$text(model.status)
-							]))
-					])),
+				$elm$html$Html$map,
+				$author$project$Main$FormMsg,
+				$author$project$Interface$mainView(model.form)),
 				$author$project$Carte$view(model.carte)
 			]));
 };

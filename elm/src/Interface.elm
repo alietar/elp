@@ -1,6 +1,5 @@
-module Interface exposing (main)
+module Interface exposing (mainView, Model, Msg(..))
 
-import Browser
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (onInput, onClick)
@@ -9,17 +8,24 @@ import Html.Events exposing (onInput, onClick)
 -- STYLES 
 
 
+inputContainerStyle : List (Attribute msg)
 inputContainerStyle =
-    [ style "display" "flex" -- utilise flexbox pour la mise en page
+
+    [ style "position" "fixed"
+    , style "left" "50px"
+    , style "bottom" "50px"
+    , style "z-index" "1000"
+    , style "display" "flex" -- utilise flexbox pour la mise en page
     , style "flex-direction" "column" -- disposition en colonne
     , style "gap" "15px" -- espace entre les éléments
     , style "background" "white"
     , style "padding" "20px" -- espace intérieur pour que le contenu ne touche pas les bords
     , style "border-radius" "8px" -- coins arrondis
-    , style "box-shadow" "0 4px 6px rgba(0,0,0,0.1)" -- ombre
+    , style "box-shadow" "rgba(50, 50, 50, 0.3) 10px 10px 20px" -- ombre
     , style "width" "200px"
     ]
 
+buttonStyle : List (Attribute msg)
 buttonStyle =
     [ style "background-color" "#4a90e2"
     , style "color" "white"
@@ -30,35 +36,15 @@ buttonStyle =
     , style "font-weight" "bold" -- texte en gras
     ]
 
-
--- MAIN
-
-
-main =
-  Browser.sandbox { init = init, update = update, view = view }
-
-
-
 -- MODEL
 
-
 type alias Model =
-  { lat : String
-  , long : String
-  , d : String
-  , validate : Bool
-  , typeError : Bool
-  }
-
-
-init : Model
-init =
-  Model "" "" "" False False
-
-
-
--- UPDATE
-
+    { lat : String
+    , long : String
+    , d : String
+    , validate : Bool
+    , typeError : Bool
+    }
 
 type Msg
   = Lat String
@@ -66,34 +52,10 @@ type Msg
   | Deniv String
   | Validate
 
-
-update : Msg -> Model -> Model
-update msg model =
-  case msg of
-    Lat lat ->
-      { model | lat = lat, validate = False, typeError = False } -- Dès que le champ est modifié, réinitialisation de la validation et de l'erreur de type
-
-    Long long ->
-      { model | long = long, validate = False, typeError = False }
-
-    Deniv d ->
-      { model | d = d, validate = False, typeError = False }
-      
-    Validate ->
-      if model.lat /= "" && model.long /= "" && model.d /= "" then
-        if String.toFloat model.d == Nothing || String.toFloat model.long == Nothing || String.toFloat model.lat == Nothing then -- Si l'une des valeurs rentrées ne correspond pas à un float
-          { model | validate = False, typeError = True }
-      else 
-          { model | validate = True }
-      else
-        { model | validate = False } -- Reste en false si un champ manque
-
-
 -- VIEW
 
-
-view : Model -> Html Msg
-view model =
+mainView : Model -> Html Msg 
+mainView model =
   div []
   [ div inputContainerStyle
     [ h1  
@@ -104,17 +66,18 @@ view model =
       , style "margin-top" "0"       -- Enlève l'espace inutile en haut
       ]
       [ text "Calculateur de Zone Atteignable" ]
-    , viewInput "text" "Latitude" model.lat Lat
-    , viewInput "text" "Longitude" model.long Long
-    , viewInput "text" "Dénivelé" model.d Deniv
-    , button 
-            ([ onClick Validate ] ++ buttonStyle ++ 
-                -- On ajoute une couleur différente si c'est cliqué
-                [ style "background-color" (if model.validate then "#27ae60" else "#4a90e2") ]
-            ) 
-            [ text (if model.validate then "Calcul en cours..." else "Calculer la zone") ]
-    , viewValidation model
-    ]
+      , viewInput "text" "Latitude" model.lat Lat
+      , viewInput "text" "Longitude" model.long Long
+      , viewInput "text" "Dénivelé" model.d Deniv
+      , button
+          (onClick Validate
+              :: buttonStyle
+              ++ [ style "background-color" (if model.validate then "#27ae60" else "#4a90e2") ]
+          )
+          [ text (if model.validate then "Calcul en cours..." else "Calculer la zone") ]
+      
+      , viewValidation model
+      ]
   ]
 
 
