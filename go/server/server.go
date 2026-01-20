@@ -18,6 +18,14 @@ func Start() {
 }
 
 func mainHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Origin, Accept")
+	w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS")
+
+	if r.Method == "OPTIONS" {
+		w.WriteHeader(http.StatusOK)
+		return
+	}
 	tmpl, err := template.ParseFiles("server/map.html") // On charge le fichier HTML
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -28,6 +36,15 @@ func mainHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func pointsHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Origin, Accept")
+	w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS")
+
+	if r.Method == "OPTIONS" {
+		w.WriteHeader(http.StatusOK)
+		return
+	}
+
 	////// Add error management like point out of map etc...
 	fmt.Println("New request for points")
 	body, _ := io.ReadAll(r.Body)
