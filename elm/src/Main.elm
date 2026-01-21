@@ -39,6 +39,7 @@ init _ =
         ( carteModel, carteCmd ) =
             Carte.init
 
+        -- ⚠️ on ne change RIEN au modèle Interface existant
         initialForm =
             { lat = ""
             , long = ""
@@ -62,7 +63,10 @@ update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
 
-        -- Messages venant de l'interface
+        -- ============================
+        -- MESSAGES DE L'INTERFACE
+        -- ============================
+
         FormMsg interfaceMsg ->
             let
                 oldForm =
@@ -125,31 +129,46 @@ update msg model =
                                     , lng = lon
                                     , deniv = deniv
                                     }
+
+                                -- 🔹 on déclenche la carte ICI
+                                ( newCarte, carteCmd ) =
+                                    Carte.update
+                                        (Carte.requestMarker
+                                            { lat = lat
+                                            , lon = lon
+                                            }
+                                        )
+                                        model.carte
                             in
                             ( { model
-                                | status = "Calcul en cours..."
+                                | carte = newCarte
+                                , status = "Calcul en cours..."
                                 , form =
                                     { oldForm
                                         | validate = True
                                         , typeError = False
                                     }
                               }
-                            , UserApi.fetchSquares apiData GotSquares
+                            , Cmd.batch
+                                [ UserApi.fetchSquares apiData GotSquares
+                                , Cmd.map MapMsg carteCmd
+                                ]
                             )
 
                         _ ->
                             ( { model
                                 | status = "Erreur de saisie"
                                 , form =
-                                    { oldForm
-                                        | typeError = True
-                                    }
+                                    { oldForm | typeError = True }
                               }
                             , Cmd.none
                             )
 
 
-        -- Messages venant de la carte (clic)
+        -- ============================
+        -- MESSAGES DE LA CARTE
+        -- ============================
+
         MapMsg carteMsg ->
             let
                 ( newCarte, carteCmd ) =
@@ -179,12 +198,14 @@ update msg model =
                     )
 
 
-        -- Réponse de l'API
+        -- ============================
+        -- RÉPONSE DE L'API
+        -- ============================
+
         GotSquares result ->
             case result of
                 Ok squares ->
                     let
-                        -- Conversion API → bounds Leaflet
                         boundsList =
                             List.map
                                 (\sq ->
@@ -196,7 +217,6 @@ update msg model =
                                 )
                                 squares
 
-                        -- Commandes Leaflet
                         drawCmds =
                             List.map Carte.drawSquare boundsList
 
@@ -211,15 +231,18 @@ update msg model =
                             "Succès : "
                                 ++ String.fromInt (List.length squares)
                                 ++ " carrés."
-                    }
-                    , Cmd.batch (clearCmd :: drawCmds ++ [ zoomCmd ])
+                      }
+                    , Cmd.batch
+                        (Cmd.map MapMsg clearCmd
+                            :: List.map (Cmd.map MapMsg) drawCmds
+                            ++ [ Cmd.map MapMsg zoomCmd ]
+                        )
                     )
 
                 Err _ ->
                     ( { model | status = "Erreur serveur." }
                     , Cmd.none
                     )
-
 
 
 
@@ -237,7 +260,7 @@ view : Model -> Html Msg
 view model =
     div []
         [ Html.map FormMsg (Interface.mainView model.form)
-        , Carte.view model.carte
+        , Html.map MapMsg (Carte.view model.carte)
         ]
 
 

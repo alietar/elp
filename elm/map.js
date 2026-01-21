@@ -26,6 +26,7 @@ function initMap(app) {
     }
 
     clickMarker = L.marker([lat, long]).addTo(map);
+    map.setView([lat, long], 13);
 
     app.ports.click_coord.send({"lat" : lat ,"long" : long});
     
@@ -38,6 +39,19 @@ function initMap(app) {
   app.ports.clearSquares.subscribe(function () {
     squaresGroup.clearLayers();
   });
+
+  app.ports.addMarker.subscribe(function (data) {
+    const lati = data.lat;
+    const lon = data.lon;
+
+    if (clickMarker) {
+        map.removeLayer(clickMarker);
+    }
+
+    clickMarker = L.marker([lati, lon]).addTo(map);
+    map.setView([lati, lon], 13);
+  });
+
 
   app.ports.drawSquare.subscribe(function (bounds) {
     drawSquare(bounds);

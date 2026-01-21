@@ -6345,6 +6345,12 @@ var $author$project$UserApi$fetchSquares = F2(
 			});
 	});
 var $elm$core$Platform$Cmd$none = $elm$core$Platform$Cmd$batch(_List_Nil);
+var $author$project$Carte$RequestMarker = function (a) {
+	return {$: 'RequestMarker', a: a};
+};
+var $author$project$Carte$requestMarker = function (coord) {
+	return $author$project$Carte$RequestMarker(coord);
+};
 var $elm$core$Basics$ge = _Utils_ge;
 var $elm$core$Basics$not = _Basics_not;
 var $elm$core$Basics$negate = function (n) {
@@ -6630,6 +6636,20 @@ var $myrho$elm_round$Round$round = $myrho$elm_round$Round$roundFun(
 			}
 		}));
 var $elm$core$String$toFloat = _String_toFloat;
+var $author$project$Carte$addMarker = _Platform_outgoingPort(
+	'addMarker',
+	function ($) {
+		return $elm$json$Json$Encode$object(
+			_List_fromArray(
+				[
+					_Utils_Tuple2(
+					'lat',
+					$elm$json$Json$Encode$float($.lat)),
+					_Utils_Tuple2(
+					'lon',
+					$elm$json$Json$Encode$float($.lon))
+				]));
+	});
 var $author$project$Carte$Coord = F2(
 	function (lat, lon) {
 		return {lat: lat, lon: lon};
@@ -6642,19 +6662,31 @@ var $author$project$Carte$coordDecoder = A3(
 var $elm$json$Json$Decode$decodeValue = _Json_run;
 var $author$project$Carte$update = F2(
 	function (msg, model) {
-		var value = msg.a;
-		var _v1 = A2($elm$json$Json$Decode$decodeValue, $author$project$Carte$coordDecoder, value);
-		if (_v1.$ === 'Ok') {
-			var coord = _v1.a;
+		if (msg.$ === 'Click') {
+			var value = msg.a;
+			var _v1 = A2($elm$json$Json$Decode$decodeValue, $author$project$Carte$coordDecoder, value);
+			if (_v1.$ === 'Ok') {
+				var coord = _v1.a;
+				return _Utils_Tuple2(
+					_Utils_update(
+						model,
+						{
+							clicked: $elm$core$Maybe$Just(coord)
+						}),
+					$elm$core$Platform$Cmd$none);
+			} else {
+				return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
+			}
+		} else {
+			var coord = msg.a;
 			return _Utils_Tuple2(
 				_Utils_update(
 					model,
 					{
 						clicked: $elm$core$Maybe$Just(coord)
 					}),
-				$elm$core$Platform$Cmd$none);
-		} else {
-			return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
+				$author$project$Carte$addMarker(
+					{lat: coord.lat, lon: coord.lon}));
 		}
 	});
 var $author$project$Main$update = F2(
@@ -6707,16 +6739,29 @@ var $author$project$Main$update = F2(
 							var lon = _v2.b.a;
 							var deniv = _v2.c.a;
 							var apiData = {deniv: deniv, lat: lat, lng: lon};
+							var _v3 = A2(
+								$author$project$Carte$update,
+								$author$project$Carte$requestMarker(
+									{lat: lat, lon: lon}),
+								model.carte);
+							var newCarte = _v3.a;
+							var carteCmd = _v3.b;
 							return _Utils_Tuple2(
 								_Utils_update(
 									model,
 									{
+										carte: newCarte,
 										form: _Utils_update(
 											oldForm,
 											{typeError: false, validate: true}),
 										status: 'Calcul en cours...'
 									}),
-								A2($author$project$UserApi$fetchSquares, apiData, $author$project$Main$GotSquares));
+								$elm$core$Platform$Cmd$batch(
+									_List_fromArray(
+										[
+											A2($author$project$UserApi$fetchSquares, apiData, $author$project$Main$GotSquares),
+											A2($elm$core$Platform$Cmd$map, $author$project$Main$MapMsg, carteCmd)
+										])));
 						} else {
 							return _Utils_Tuple2(
 								_Utils_update(
@@ -6733,12 +6778,12 @@ var $author$project$Main$update = F2(
 			case 'MapMsg':
 				var carteMsg = msg.a;
 				var oldForm = model.form;
-				var _v3 = A2($author$project$Carte$update, carteMsg, model.carte);
-				var newCarte = _v3.a;
-				var carteCmd = _v3.b;
-				var _v4 = newCarte.clicked;
-				if (_v4.$ === 'Just') {
-					var coord = _v4.a;
+				var _v4 = A2($author$project$Carte$update, carteMsg, model.carte);
+				var newCarte = _v4.a;
+				var carteCmd = _v4.b;
+				var _v5 = newCarte.clicked;
+				if (_v5.$ === 'Just') {
+					var coord = _v5.a;
 					return _Utils_Tuple2(
 						_Utils_update(
 							model,
@@ -6785,11 +6830,16 @@ var $author$project$Main$update = F2(
 						$elm$core$Platform$Cmd$batch(
 							A2(
 								$elm$core$List$cons,
-								clearCmd,
+								A2($elm$core$Platform$Cmd$map, $author$project$Main$MapMsg, clearCmd),
 								_Utils_ap(
-									drawCmds,
+									A2(
+										$elm$core$List$map,
+										$elm$core$Platform$Cmd$map($author$project$Main$MapMsg),
+										drawCmds),
 									_List_fromArray(
-										[zoomCmd])))));
+										[
+											A2($elm$core$Platform$Cmd$map, $author$project$Main$MapMsg, zoomCmd)
+										])))));
 				} else {
 					return _Utils_Tuple2(
 						_Utils_update(
@@ -7005,7 +7055,10 @@ var $author$project$Main$view = function (model) {
 				$elm$html$Html$map,
 				$author$project$Main$FormMsg,
 				$author$project$Interface$mainView(model.form)),
-				$author$project$Carte$view(model.carte)
+				A2(
+				$elm$html$Html$map,
+				$author$project$Main$MapMsg,
+				$author$project$Carte$view(model.carte))
 			]));
 };
 var $author$project$Main$main = $elm$browser$Browser$element(

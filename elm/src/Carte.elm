@@ -10,6 +10,8 @@ port module Carte exposing
     , drawSquare
     , autoView
     , clearSquares
+    , addMarker
+    , requestMarker
     )
 
 import Html exposing (Html, div)
@@ -19,7 +21,7 @@ import Draw_square
 
 
 
--- PORTS
+-- PORTS (anciens + nouveau)
 
 port initMap :
     { lat : Float, lon : Float, zoom : Int }
@@ -35,6 +37,12 @@ port autoView : () -> Cmd msg
 
 
 port clearSquares : () -> Cmd msg
+
+
+-- 🔹 NOUVEAU PORT
+port addMarker :
+    { lat : Float, lon : Float }
+    -> Cmd msg
 
 
 port click_coord : (Decode.Value -> msg) -> Sub msg
@@ -55,10 +63,11 @@ type alias Model =
 
 type Msg
     = Click Decode.Value
+    | RequestMarker Coord
 
 
 
--- INIT
+-- INIT (inchangé)
 
 init : ( Model, Cmd Msg )
 init =
@@ -77,6 +86,7 @@ init =
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
+        -- clic sur la carte (ancien comportement)
         Click value ->
             case Decode.decodeValue coordDecoder value of
                 Ok coord ->
@@ -85,9 +95,18 @@ update msg model =
                 Err _ ->
                     ( model, Cmd.none )
 
+        -- 🔹 demande venant de Main (Interface → Carte)
+        RequestMarker coord ->
+            ( { model | clicked = Just coord }
+            , addMarker
+                { lat = coord.lat
+                , lon = coord.lon
+                }
+            )
 
 
--- SUBSCRIPTIONS (JS → ELM)
+
+-- SUBSCRIPTIONS
 
 subscriptions : Model -> Sub Msg
 subscriptions _ =
@@ -103,10 +122,18 @@ view _ =
 
 
 
--- DECODER
+-- DECODER (inchangé)
 
 coordDecoder : Decode.Decoder Coord
 coordDecoder =
     Decode.map2 Coord
         (Decode.field "lat" Decode.float)
         (Decode.field "long" Decode.float)
+
+
+
+-- API PUBLIQUE POUR MAIN
+
+requestMarker : Coord -> Msg
+requestMarker coord =
+    RequestMarker coord
