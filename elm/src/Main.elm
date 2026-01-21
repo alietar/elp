@@ -64,7 +64,89 @@ update msg model =
 
         -- Messages venant de l'interface
         FormMsg interfaceMsg ->
-            ( model, Cmd.none )
+            let
+                oldForm =
+                    model.form
+            in
+            case interfaceMsg of
+
+                Interface.Lat val ->
+                    ( { model
+                        | form =
+                            { oldForm
+                                | lat = val
+                                , validate = False
+                                , typeError = False
+                            }
+                      }
+                    , Cmd.none
+                    )
+
+                Interface.Long val ->
+                    ( { model
+                        | form =
+                            { oldForm
+                                | long = val
+                                , validate = False
+                                , typeError = False
+                            }
+                      }
+                    , Cmd.none
+                    )
+
+                Interface.Deniv val ->
+                    ( { model
+                        | form =
+                            { oldForm
+                                | d = val
+                                , validate = False
+                                , typeError = False
+                            }
+                      }
+                    , Cmd.none
+                    )
+
+                Interface.Validate ->
+                    let
+                        maybeLat =
+                            String.toFloat oldForm.lat
+
+                        maybeLon =
+                            String.toFloat oldForm.long
+
+                        maybeDeniv =
+                            String.toFloat oldForm.d
+                    in
+                    case ( maybeLat, maybeLon, maybeDeniv ) of
+                        ( Just lat, Just lon, Just deniv ) ->
+                            let
+                                apiData =
+                                    { lat = lat
+                                    , lng = lon
+                                    , deniv = deniv
+                                    }
+                            in
+                            ( { model
+                                | status = "Calcul en cours..."
+                                , form =
+                                    { oldForm
+                                        | validate = True
+                                        , typeError = False
+                                    }
+                              }
+                            , UserApi.fetchSquares apiData GotSquares
+                            )
+
+                        _ ->
+                            ( { model
+                                | status = "Erreur de saisie"
+                                , form =
+                                    { oldForm
+                                        | typeError = True
+                                    }
+                              }
+                            , Cmd.none
+                            )
 
 
         -- Messages venant de la carte (clic)
@@ -72,12 +154,12 @@ update msg model =
             let
                 ( newCarte, carteCmd ) =
                     Carte.update carteMsg model.carte
+
+                oldForm =
+                    model.form
             in
             case newCarte.clicked of
                 Just coord ->
-                    let
-                        oldForm = model.form
-                    in
                     ( { model
                         | carte = newCarte
                         , form =
@@ -85,7 +167,6 @@ update msg model =
                                 | lat = Round.round 6 coord.lat
                                 , long = Round.round 6 coord.lon
                                 , validate = False
-
                                 , typeError = False
                             }
                       }
@@ -99,8 +180,45 @@ update msg model =
 
 
         -- Réponse de l'API
-        GotSquares _ ->
-            ( model, Cmd.none )
+        GotSquares result ->
+            case result of
+                Ok squares ->
+                    let
+                        -- Conversion API → bounds Leaflet
+                        boundsList =
+                            List.map
+                                (\sq ->
+                                    Draw_square.computeBounds
+                                        { size = sq.size
+                                        , centerLat = sq.centerLat
+                                        , centerLng = sq.centerLng
+                                        }
+                                )
+                                squares
+
+                        -- Commandes Leaflet
+                        drawCmds =
+                            List.map Carte.drawSquare boundsList
+
+                        clearCmd =
+                            Carte.clearSquares ()
+
+                        zoomCmd =
+                            Carte.autoView ()
+                    in
+                    ( { model
+                        | status =
+                            "Succès : "
+                                ++ String.fromInt (List.length squares)
+                                ++ " carrés."
+                    }
+                    , Cmd.batch (clearCmd :: drawCmds ++ [ zoomCmd ])
+                    )
+
+                Err _ ->
+                    ( { model | status = "Erreur serveur." }
+                    , Cmd.none
+                    )
 
 
 
