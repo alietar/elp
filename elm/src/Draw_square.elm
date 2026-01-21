@@ -33,7 +33,7 @@ latFactor =
 -- CALCUL DU CARRÉ
 
 computeBounds : Params -> Bounds
-computeBounds p =
+computeBounds p = -- permettre de calculer les 4 coins des carrés 
     { southWest =
         ( p.centerLng - lngFactor * toFloat p.size
         , p.centerLat - latFactor * toFloat p.size

@@ -39,7 +39,6 @@ init _ =
         ( carteModel, carteCmd ) =
             Carte.init
 
-        -- ⚠️ on ne change RIEN au modèle Interface existant
         initialForm =
             { lat = ""
             , long = ""
@@ -74,7 +73,7 @@ update msg model =
             in
             case interfaceMsg of
 
-                Interface.Lat val ->
+                Interface.Lat val -> -- mise à jour de latitude si message de l'interface
                     ( { model
                         | form =
                             { oldForm
@@ -86,7 +85,7 @@ update msg model =
                     , Cmd.none
                     )
 
-                Interface.Long val ->
+                Interface.Long val -> -- mise à jour de longitude si message de l'interface
                     ( { model
                         | form =
                             { oldForm
@@ -133,7 +132,7 @@ update msg model =
                                 -- 🔹 on déclenche la carte ICI
                                 ( newCarte, carteCmd ) =
                                     Carte.update
-                                        (Carte.requestMarker
+                                        (Carte.requestMarker -- on fait la requête de marqueur si on remplit des données dans l'interface
                                             { lat = lat
                                             , lon = lon
                                             }
@@ -183,7 +182,7 @@ update msg model =
                         | carte = newCarte
                         , form =
                             { oldForm
-                                | lat = Round.round 6 coord.lat
+                                | lat = Round.round 6 coord.lat -- on arrondi à 6 chiffres après la virgule les coordonnées cliquées
                                 , long = Round.round 6 coord.lon
                                 , validate = False
                                 , typeError = False
@@ -206,7 +205,7 @@ update msg model =
             case result of
                 Ok squares ->
                     let
-                        boundsList =
+                        boundsList = -- calcul des coordonnées des 4 sommets des carrées/rectangles
                             List.map
                                 (\sq ->
                                     Draw_square.computeBounds
@@ -218,7 +217,7 @@ update msg model =
                                 squares
 
                         drawCmds =
-                            List.map Carte.drawSquare boundsList
+                            List.map Carte.drawSquare boundsList -- on envoie la commande pour tracer les carrés
 
                         clearCmd =
                             Carte.clearSquares ()
@@ -248,7 +247,7 @@ update msg model =
 
 -- SUBSCRIPTIONS
 
-subscriptions : Model -> Sub Msg
+subscriptions : Model -> Sub Msg -- on écoute les évenements du fichier Carte.elm
 subscriptions model =
     Sub.map MapMsg (Carte.subscriptions model.carte)
 
@@ -261,7 +260,7 @@ view model =
     div []
         [ Html.map FormMsg (Interface.mainView model.form)
         , Html.map MapMsg (Carte.view model.carte)
-        ]
+        ] -- ajout des balises HTML 
 
 
 

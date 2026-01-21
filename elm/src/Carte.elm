@@ -25,27 +25,26 @@ import Draw_square
 
 port initMap :
     { lat : Float, lon : Float, zoom : Int }
-    -> Cmd msg
+    -> Cmd msg  -- envoi au JS la commande d'initialisation de la carte à l'aide de lat,lng et zoom
 
 
 port drawSquare :
     Draw_square.Bounds
-    -> Cmd msg
+    -> Cmd msg --  -- envoi au JS la commande de traçage des carrés avec en entrée une liste de carrés avec leurs coordonnées
 
 
-port autoView : () -> Cmd msg
+port autoView : () -> Cmd msg -- envoi la commande d'autoview pour que les carrés se voit sur la carte
 
 
-port clearSquares : () -> Cmd msg
+port clearSquares : () -> Cmd msg -- permet de nettoyer les carrés
 
 
--- 🔹 NOUVEAU PORT
 port addMarker :
     { lat : Float, lon : Float }
-    -> Cmd msg
+    -> Cmd msg -- envoi un message pour afficher un marqueur à l'endroit qu'on recherche via l'interface
 
 
-port click_coord : (Decode.Value -> msg) -> Sub msg
+port click_coord : (Decode.Value -> msg) -> Sub msg -- port de reception des coordonnées du point cliqué
 
 
 
@@ -67,11 +66,11 @@ type Msg
 
 
 
--- INIT (inchangé)
+-- INIT
 
 init : ( Model, Cmd Msg )
 init =
-    ( { clicked = Nothing }
+    ( { clicked = Nothing } -- valeur initiale de la carte (centré sur la France)
     , initMap
         { lat = 46.603354
         , lon = 1.888334
@@ -86,8 +85,7 @@ init =
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
-        -- clic sur la carte (ancien comportement)
-        Click value ->
+        Click value -> -- si carte cliquée -> on met à jour le model 
             case Decode.decodeValue coordDecoder value of
                 Ok coord ->
                     ( { model | clicked = Just coord }, Cmd.none )
@@ -95,7 +93,7 @@ update msg model =
                 Err _ ->
                     ( model, Cmd.none )
 
-        -- 🔹 demande venant de Main (Interface → Carte)
+        -- 🔹 demande venant de Main (Interface → Carte) pour récupérer les corrdonnées du point cliqué
         RequestMarker coord ->
             ( { model | clicked = Just coord }
             , addMarker
@@ -108,7 +106,7 @@ update msg model =
 
 -- SUBSCRIPTIONS
 
-subscriptions : Model -> Sub Msg
+subscriptions : Model -> Sub Msg -- -- Écoute les clics sur la carte envoyés par JavaScript
 subscriptions _ =
     click_coord Click
 
@@ -116,13 +114,14 @@ subscriptions _ =
 
 -- VIEW
 
-view : Model -> Html msg
+view : Model -> Html msg -- créé la balise HTML de "map"
 view _ =
     div [ id "map" ] []
 
 
 
 -- DECODER (inchangé)
+-- Décode les coordonnées envoyées depuis JavaScript lors d’un clic sur la carte
 
 coordDecoder : Decode.Decoder Coord
 coordDecoder =
@@ -133,7 +132,7 @@ coordDecoder =
 
 
 -- API PUBLIQUE POUR MAIN
-
+-- Crée un message destiné à la carte pour demander l’ajout d’un marqueur
 requestMarker : Coord -> Msg
 requestMarker coord =
     RequestMarker coord
