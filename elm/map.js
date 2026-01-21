@@ -1,5 +1,8 @@
 let map = null;
 let squaresGroup = L.featureGroup();
+let clickMarker = null;
+
+
 
 function initMap(app) {
   app.ports.initMap.subscribe(function (config) {
@@ -11,6 +14,23 @@ function initMap(app) {
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
       attribution: "© OpenStreetMap contributors"
     }).addTo(map);
+
+    map.on('click', function(e){
+    var coord = e.latlng
+    var lat = coord.lat
+    var long = coord.lng
+    console.log("lat :" + lat +"long :" + long);
+
+    if (clickMarker) {
+        map.removeLayer(clickMarker);
+    }
+
+    clickMarker = L.marker([lat, long]).addTo(map);
+
+    app.ports.click_coord.send({"lat" : lat ,"long" : long});
+    
+
+    });
     
     squaresGroup.addTo(map)
   });
