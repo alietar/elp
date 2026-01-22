@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"text/template"
 
+	"github.com/alietar/elp/go/gpsfiles"
 	"github.com/alietar/elp/go/tileutils"
 )
 
@@ -26,6 +27,7 @@ func mainHandler(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		return
 	}
+
 	tmpl, err := template.ParseFiles("server/map.html") // On charge le fichier HTML
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -51,44 +53,51 @@ func pointsHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Println(string(body))
 
 	type JsonString struct {
-		Lat   float64
-		Lng   float64
-		Deniv float64
+		Lat      float64
+		Lng      float64
+		Deniv    float64
+		Accuracy string
 	}
+
 	var jsonData JsonString
 	json.Unmarshal(body, &jsonData)
 
-	// Gets the query parameters in the URL
-	/*
-		latitudeStr := strings.TrimSpace(r.URL.Query().Get("lat")) // TrimSpace remove useless spaces
-		longitudeStr := strings.TrimSpace(r.URL.Query().Get("lng"))
-		elevationStr := strings.TrimSpace(r.URL.Query().Get("deniv"))
+	// Accuracy verification
+	var accuracy gpsfiles.MapAccuracy
 
-		latitude, err1 := strconv.ParseFloat(latitudeStr, 64)
-		longitude, err2 := strconv.ParseFloat(longitudeStr, 64)
-		elevation, err3 := strconv.ParseFloat(elevationStr, 64)
+	switch jsonData.Accuracy {
+	case "1":
+		accuracy = gpsfiles.ACCURACY_1
+	case "5":
+		accuracy = gpsfiles.ACCURACY_1
+	case "25":
+		accuracy = gpsfiles.ACCURACY_1
+	default:
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte("{\"error\": \"missing accuracy\"}"))
 
-		// Verify that query parameters are correct
-		if err1 != nil || err2 != nil || err3 != nil {
-			fmt.Println("Error in the parsing of the query parameters")
-
-			fmt.Println(err1)
-		}
-	*/
-
-	if jsonData.Lat > 0 && jsonData.Lng > 0 && jsonData.Deniv > 0 {
-		// pointsAffiche = nil // Réinitialise la liste des points à afficher à chaque requête
-		var squaresToShow []tileutils.Wgs84Square
-
-		tiles := tileutils.ComputeTiles(jsonData.Lng, jsonData.Lat, jsonData.Deniv)
-
-		for _, tile := range tiles {
-			squaresToShow = append(squaresToShow, tile.ComputeOptimizedSquaresWgs()...)
-		}
-
-		w.Header().Set("Content-Type", "application/json") // On indique que la réponse sera au format JSON
-		json.NewEncoder(w).Encode(squaresToShow)           // On encode la liste des points en JSON et on l'envoie en réponse
+		return
 	}
 
-	// json.NewEncoder(w).Encode(squaresToShow)           // On encode la liste des points en JSON et on l'envoie en réponse
+	fmt.Println(accuracy)
+
+	var squaresToShow []tileutils.Wgs84Square
+
+	tiles := tileutils.ComputeTiles(jsonData.Lng, jsonData.Lat, jsonData.Deniv)
+
+	if len(tiles) == 0 {
+		w.WriteHeader(http.StatusNotAcceptable)
+		w.Write([]byte("{\"error\": \"invalid coordinates\"}"))
+
+		return
+	}
+
+	fmt.Printf("Computed %d tiles\n", len(tiles))
+
+	for _, tile := range tiles {
+		squaresToShow = append(squaresToShow, tile.ComputeOptimizedSquaresWgs()...)
+	}
+
+	w.Header().Set("Content-Type", "application/json") // On indique que la réponse sera au format JSON
+	json.NewEncoder(w).Encode(squaresToShow)           // On encode la liste des points en JSON et on l'envoie en réponse
 }

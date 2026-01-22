@@ -78,24 +78,6 @@ func ComputeTiles(startLongitude, startLatitude, d float64) (returnTiles []*Tile
 	}
 
 	return
-
-	// var pointsAffiche []algo.Coordonnee // Liste des points à afficher
-	/*// Parcours de la matrice pour récupérer les coordonnées des points connectés
-		for i := 0; i < 1000; i++ {
-			for j := 0; j < 1000; j++ {
-				if tile.Reachable[i][j] == true {
-					X := tile.XLambertLL + float64(i)*25.0             // Conversion de l'indice de colonne en coordonnée Lambert93
-					Y := (tile.YLambertLL) + 25000.0 - float64(j)*25.0 // Conversion de l'indice de ligne en coordonnée Lambert93
-					lat, lng, _ := algo.FromLambert93ToGpsWgs84(X, Y)  // Conversion en coordonnées GPS WGS84
-					pt := algo.Coordonnee{Lat: lat, Lng: lng}
-
-					if !slices.Contains(pointsAffiche, pt) {
-						pointsAffiche = append(pointsAffiche, pt) // Ajout à la liste des points à afficher
-					}
-				}
-			}
-		}
-	}*/
 }
 
 func addTileWorker(wg *sync.WaitGroup, xLambert, yLambert float64, results chan *Tile, exploreAdj chan [2]float64, d, alt float64) float64 {
@@ -104,6 +86,11 @@ func addTileWorker(wg *sync.WaitGroup, xLambert, yLambert float64, results chan 
 	/////// !!!!! Use the same tile if the algo was already run on it
 	tile, xStart, yStart := NewTileFromLambert(xLambert, yLambert)
 
+	if xStart == -1 || yStart == -1 {
+		wg.Done()
+		return alt
+	}
+
 	if alt == -1 {
 		alt = tile.Altitudes[xStart][yStart]
 
@@ -111,11 +98,6 @@ func addTileWorker(wg *sync.WaitGroup, xLambert, yLambert float64, results chan 
 	}
 
 	tile.CreatePotentiallyReachable(d, alt)
-
-	if xStart == -1 || yStart == -1 {
-		wg.Done()
-		return alt
-	}
 
 	go FindNeighbors(tile, xStart, yStart, wg, results, exploreAdj)
 
