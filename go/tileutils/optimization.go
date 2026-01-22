@@ -68,7 +68,7 @@ func (t *Tile) ComputeOptimizedSquaresWgs() (opt []Wgs84Square) {
 				markSquareUsed(&used, x, y, size)
 
 				addSquare(&opt, x, y, size,
-					t.XLambertLL, t.YLambertLL, 25)
+					t.XLambertLL, t.YLambertLL, t.CellSize)
 			}
 		}
 	}

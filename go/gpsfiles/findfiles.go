@@ -57,7 +57,7 @@ func GetFilesNameFolder(folderName string) ([]string, error) {
 	var files []string
 	for _, entry := range entries {
 		if !entry.IsDir() {
-			files = append(files, entry.Name())
+			files = append(files, folderName+entry.Name())
 		}
 	}
 
@@ -126,14 +126,12 @@ func GetFileForMyCoordinate(x, y float64, folderPath string) (string, error, flo
 	}
 
 	// 2. Parcours des fichiers
-	for _, file := range files {
-		if !strings.HasSuffix(file, ".asc") {
+	for _, path := range files {
+		if !strings.HasSuffix(path, ".asc") {
 			continue
 		}
 
-		fullPath := folderPath + "/" + file
-
-		xll, yll, cellsize, err := ReadCoordinateLambert93File(fullPath)
+		xll, yll, cellsize, err := ReadCoordinateLambert93File(path)
 		if err != nil {
 			continue
 		}
@@ -146,7 +144,7 @@ func GetFileForMyCoordinate(x, y float64, folderPath string) (string, error, flo
 
 		// 5. Test d’appartenance
 		if x >= xmin && x <= xmax && y >= ymin && y <= ymax {
-			return file, nil, xll, yll
+			return path, nil, xll, yll
 		}
 	}
 

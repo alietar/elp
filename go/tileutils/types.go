@@ -9,6 +9,7 @@ type Tile struct {
 	YLambertLL float64
 	Lat        float64
 	Long       float64
+	CellSize   float64
 
 	Altitudes            *[MATRIX_SIZE][MATRIX_SIZE]float64
 	PotentiallyReachable *[MATRIX_SIZE][MATRIX_SIZE]bool

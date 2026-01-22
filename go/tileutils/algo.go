@@ -27,21 +27,21 @@ func findNeighborsRecursive(
 
 	if x == 0 || x == MATRIX_SIZE-1 || y == 0 || y == MATRIX_SIZE-1 {
 		coord := [2]float64{
-			t.XLambertLL + float64(x*25),
-			t.YLambertLL + float64((1000-y)*25),
+			t.XLambertLL + t.CellSize*float64(x),
+			t.YLambertLL + t.CellSize*float64(1000-y),
 		}
 
 		if x == 0 {
-			coord[0] -= 30
+			coord[0] -= t.CellSize + t.CellSize/5
 		}
 		if x == MATRIX_SIZE-1 {
-			coord[0] += 30
+			coord[0] += t.CellSize + t.CellSize/5
 		}
 		if y == 0 {
-			coord[1] -= 30
+			coord[1] -= t.CellSize + t.CellSize/5
 		}
 		if y == MATRIX_SIZE-1 {
-			coord[1] += 30
+			coord[1] += t.CellSize + t.CellSize/5
 		}
 
 		fmt.Println("Reached bounderies")

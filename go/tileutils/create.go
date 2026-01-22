@@ -10,25 +10,32 @@ import (
 	"github.com/alietar/elp/go/gpsfiles"
 )
 
-func NewTileFromLambert(xLambert, yLambert float64) (*Tile, int, int) {
+func NewTileFromLambert(xLambert, yLambert float64, accuracy gpsfiles.MapAccuracy) (*Tile, int, int) {
 	var t Tile
 
+	folderPath := TILE_FOLDER_PATH + string(accuracy) + "/"
+
 	// Getting the right file
-	path, er, xLambertLL, yLambertLL := gpsfiles.GetFileForMyCoordinate(xLambert, yLambert, TILE_FOLDER_PATH)
+	path, er, xLambertLL, yLambertLL := gpsfiles.GetFileForMyCoordinate(xLambert, yLambert, folderPath)
 
 	t.XLambertLL = xLambertLL
 	t.YLambertLL = yLambertLL
+	if accuracy == gpsfiles.ACCURACY_1 {
+		t.CellSize = 1
+	} else if accuracy == gpsfiles.ACCURACY_5 {
+		t.CellSize = 5
+	} else if accuracy == gpsfiles.ACCURACY_25 {
+		t.CellSize = 25
+	}
 
 	if er != nil {
 		fmt.Println(er)
 		return &t, -1, -1
 	}
 
-	path = TILE_FOLDER_PATH + path
-
 	fmt.Printf("Tile is: %s\n", path)
 
-	x, y := LambertToIndices(t.XLambertLL, t.YLambertLL, xLambert, yLambert)
+	x, y := LambertToIndices(t.XLambertLL, t.YLambertLL, xLambert, yLambert, t.CellSize)
 
 	if x == -1 || y == -1 {
 		fmt.Printf("Erreur sur le calcul de la case départ\n")
@@ -96,9 +103,9 @@ func (t *Tile) CreatePotentiallyReachable(d float64, startAltitude float64) {
 }
 
 // prend en argument le nom du fichier de BD de départ et les coordonnées x et y du point de départ en lambert et renvoie les indices i et j de la case de départ
-func LambertToIndices(xLL, yLL, xLambert, yLambert float64) (xMatrix, yMatrix int) {
-	xMatrix = int((xLambert - xLL) / 25) // car entre chaque indice il y a 25m
-	yMatrix = 1000 - int((yLambert-yLL)/25)
+func LambertToIndices(xLL, yLL, xLambert, yLambert, squareSize float64) (xMatrix, yMatrix int) {
+	xMatrix = int((xLambert - xLL) / squareSize) // car entre chaque indice il y a 25m
+	yMatrix = 1000 - int((yLambert-yLL)/squareSize)
 
 	if xMatrix >= 1000 || yMatrix >= 1000 {
 		fmt.Println("Coordonnées lambert en dehors de la case")

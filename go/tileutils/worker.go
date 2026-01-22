@@ -9,7 +9,7 @@ import (
 )
 
 // startLongitude, startLatitude := *flag.String("long", "4.871928", "starting longitude"), *flag.String("lat", "45.7838052", "starting latitude")
-func ComputeTiles(startLongitude, startLatitude, d float64) (returnTiles []*Tile) {
+func ComputeTiles(startLongitude, startLatitude, d float64, accuracy gpsfiles.MapAccuracy) (returnTiles []*Tile) {
 	// Getting the Lambert coordinates
 	xLambert, yLambert, er := gpsfiles.ConvertWgs84ToLambert93(startLongitude, startLatitude)
 
@@ -70,7 +70,7 @@ func ComputeTiles(startLongitude, startLatitude, d float64) (returnTiles []*Tile
 
 		exploredBorderPointsLambert = append(exploredBorderPointsLambert, entryPointCoordinates)
 
-		startAlt = addTileWorker(&wg, xLambert, yLambert, doneTileMatricesChan, adjacentTileCoordinatesChan, d, startAlt)
+		startAlt = addTileWorker(&wg, xLambert, yLambert, d, startAlt, accuracy, doneTileMatricesChan, adjacentTileCoordinatesChan)
 	}
 
 	for tile := range doneTileMatricesChan {
@@ -80,11 +80,16 @@ func ComputeTiles(startLongitude, startLatitude, d float64) (returnTiles []*Tile
 	return
 }
 
-func addTileWorker(wg *sync.WaitGroup, xLambert, yLambert float64, results chan *Tile, exploreAdj chan [2]float64, d, alt float64) float64 {
+func addTileWorker(wg *sync.WaitGroup,
+	xLambert, yLambert, d, alt float64,
+	accuracy gpsfiles.MapAccuracy,
+	results chan *Tile,
+	exploreAdj chan [2]float64,
+) float64 {
 	fmt.Printf("New tile worker starting at: x=%f, y=%f\n", xLambert, yLambert)
 
 	/////// !!!!! Use the same tile if the algo was already run on it
-	tile, xStart, yStart := NewTileFromLambert(xLambert, yLambert)
+	tile, xStart, yStart := NewTileFromLambert(xLambert, yLambert, accuracy)
 
 	if xStart == -1 || yStart == -1 {
 		wg.Done()

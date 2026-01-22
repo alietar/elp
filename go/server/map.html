@@ -12,6 +12,11 @@
 				<input type="number" step=0.0000001 value="45.7838052" name="lat" placeholder="Latitude" style="width: 80px;">
 				<input type="number" step=0.0000001 name="lng" value="4.871928" placeholder="Longitude" style="width: 80px;">
 				<input type="number" step=0.01 name="deniv" min=0 value="0.3" placeholder="Dénivelé" style="width: 80px;">
+				<select name="accuracy">
+					<option value="25">25M</option>
+					<option value="5">5M</option>
+					<option value="1">1M</option>
+				</select>
 				<button type="submit">Calculer la zone atteignable</button>
 			</form>
 		</div>
@@ -45,11 +50,14 @@
 					
 					data = await response.json();
 
-					data.forEach(p => {
+					lngWidth = 0.000117*(data.TileSize/25)
+					latWidth = 0.000167*(data.TileSize/25)
+
+					data.Tiles.forEach(p => {
 						// On définit les coins du carré (environ 0.00011 degrés = 12.5 mètres)
 						var bounds = [
-							[p.CenterLng - 0.000117*p.Size, p.CenterLat - 0.000167*p.Size], 
-							[p.CenterLng + 0.000117*p.Size, p.CenterLat + 0.000167*p.Size]
+							[p.CenterLng - lngWidth*p.Size, p.CenterLat - latWidth*p.Size], 
+							[p.CenterLng + lngWidth*p.Size, p.CenterLat + latWidth*p.Size]
 						];
 						
 						var rect = L.rectangle(bounds, {color: 'blue', weight: 1, fillOpacity: 0.5, stroke: false}); // Création d'un rectangle pour chaque point, weight = 1 permet que les points restent visibles lorsqu'on dézoome

@@ -56,7 +56,7 @@ func pointsHandler(w http.ResponseWriter, r *http.Request) {
 		Lat      float64
 		Lng      float64
 		Deniv    float64
-		Accuracy string
+		Accuracy int
 	}
 
 	var jsonData JsonString
@@ -66,12 +66,12 @@ func pointsHandler(w http.ResponseWriter, r *http.Request) {
 	var accuracy gpsfiles.MapAccuracy
 
 	switch jsonData.Accuracy {
-	case "1":
+	case 1:
 		accuracy = gpsfiles.ACCURACY_1
-	case "5":
-		accuracy = gpsfiles.ACCURACY_1
-	case "25":
-		accuracy = gpsfiles.ACCURACY_1
+	case 5:
+		accuracy = gpsfiles.ACCURACY_5
+	case 25:
+		accuracy = gpsfiles.ACCURACY_25
 	default:
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write([]byte("{\"error\": \"missing accuracy\"}"))
@@ -83,7 +83,7 @@ func pointsHandler(w http.ResponseWriter, r *http.Request) {
 
 	var squaresToShow []tileutils.Wgs84Square
 
-	tiles := tileutils.ComputeTiles(jsonData.Lng, jsonData.Lat, jsonData.Deniv)
+	tiles := tileutils.ComputeTiles(jsonData.Lng, jsonData.Lat, jsonData.Deniv, accuracy)
 
 	if len(tiles) == 0 {
 		w.WriteHeader(http.StatusNotAcceptable)
@@ -98,6 +98,14 @@ func pointsHandler(w http.ResponseWriter, r *http.Request) {
 		squaresToShow = append(squaresToShow, tile.ComputeOptimizedSquaresWgs()...)
 	}
 
+	var response = struct {
+		TileSize int
+		Tiles    []tileutils.Wgs84Square
+	}{
+		jsonData.Accuracy,
+		squaresToShow,
+	}
+
 	w.Header().Set("Content-Type", "application/json") // On indique que la réponse sera au format JSON
-	json.NewEncoder(w).Encode(squaresToShow)           // On encode la liste des points en JSON et on l'envoie en réponse
+	json.NewEncoder(w).Encode(response)                // On encode la liste des points en JSON et on l'envoie en réponse
 }
