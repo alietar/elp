@@ -5379,6 +5379,7 @@ var $elm$core$Task$perform = F2(
 				A2($elm$core$Task$map, toMessage, task)));
 	});
 var $elm$browser$Browser$element = _Browser_element;
+var $author$project$Interface$Idle = {$: 'Idle'};
 var $author$project$Main$MapMsg = function (a) {
 	return {$: 'MapMsg', a: a};
 };
@@ -5420,12 +5421,12 @@ var $author$project$Carte$init = _Utils_Tuple2(
 		{lat: 46.603354, lon: 1.888334, zoom: 6}));
 var $elm$core$Platform$Cmd$map = _Platform_map;
 var $author$project$Main$init = function (_v0) {
-	var initialForm = {d: '', lat: '', _long: '', typeError: false, validate: false};
+	var initialForm = {accuracy: '25m', d: '', lat: '', _long: '', status: $author$project$Interface$Idle, typeError: false};
 	var _v1 = $author$project$Carte$init;
 	var carteModel = _v1.a;
 	var carteCmd = _v1.b;
 	return _Utils_Tuple2(
-		{carte: carteModel, form: initialForm, status: 'Prêt.'},
+		{carte: carteModel, form: initialForm},
 		A2($elm$core$Platform$Cmd$map, $author$project$Main$MapMsg, carteCmd));
 };
 var $elm$core$Platform$Sub$map = _Platform_map;
@@ -5443,9 +5444,12 @@ var $author$project$Main$subscriptions = function (model) {
 		$author$project$Main$MapMsg,
 		$author$project$Carte$subscriptions(model.carte));
 };
+var $author$project$Interface$Error = {$: 'Error'};
 var $author$project$Main$GotSquares = function (a) {
 	return {$: 'GotSquares', a: a};
 };
+var $author$project$Interface$Loading = {$: 'Loading'};
+var $author$project$Interface$Success = {$: 'Success'};
 var $elm$json$Json$Encode$null = _Json_encodeNull;
 var $author$project$Carte$autoView = _Platform_outgoingPort(
 	'autoView',
@@ -5458,12 +5462,12 @@ var $author$project$Carte$clearSquares = _Platform_outgoingPort(
 	function ($) {
 		return $elm$json$Json$Encode$null;
 	});
-var $author$project$Draw_square$latFactor = 0.000117;
-var $author$project$Draw_square$lngFactor = 0.000167;
-var $author$project$Draw_square$computeBounds = function (p) {
+var $author$project$DrawSquare$latFactor = 0.000117;
+var $author$project$DrawSquare$lngFactor = 0.000167;
+var $author$project$DrawSquare$computeBounds = function (p) {
 	return {
-		northEast: _Utils_Tuple2(p.centerLng + ($author$project$Draw_square$lngFactor * p.size), p.centerLat + ($author$project$Draw_square$latFactor * p.size)),
-		southWest: _Utils_Tuple2(p.centerLng - ($author$project$Draw_square$lngFactor * p.size), p.centerLat - ($author$project$Draw_square$latFactor * p.size))
+		northEast: _Utils_Tuple2(p.centerLng + (($author$project$DrawSquare$lngFactor / 25) * p.size), p.centerLat + (($author$project$DrawSquare$latFactor / 25) * p.size)),
+		southWest: _Utils_Tuple2(p.centerLng - (($author$project$DrawSquare$lngFactor / 25) * p.size), p.centerLat - (($author$project$DrawSquare$latFactor / 25) * p.size))
 	};
 };
 var $elm$json$Json$Encode$list = F2(
@@ -5523,7 +5527,10 @@ var $author$project$UserApi$encodeUser = function (startPoint) {
 				$elm$json$Json$Encode$float(startPoint.lng)),
 				_Utils_Tuple2(
 				'deniv',
-				$elm$json$Json$Encode$float(startPoint.deniv))
+				$elm$json$Json$Encode$float(startPoint.deniv)),
+				_Utils_Tuple2(
+				'accuracy',
+				$elm$json$Json$Encode$float(startPoint.accuracy))
 			]));
 };
 var $elm$json$Json$Decode$decodeString = _Json_runOnString;
@@ -6318,14 +6325,18 @@ var $elm$http$Http$post = function (r) {
 	return $elm$http$Http$request(
 		{body: r.body, expect: r.expect, headers: _List_Nil, method: 'POST', timeout: $elm$core$Maybe$Nothing, tracker: $elm$core$Maybe$Nothing, url: r.url});
 };
+var $author$project$UserApi$ServerResponse = F2(
+	function (tileSize, tiles) {
+		return {tileSize: tileSize, tiles: tiles};
+	});
+var $elm$json$Json$Decode$field = _Json_decodeField;
+var $elm$json$Json$Decode$int = _Json_decodeInt;
 var $elm$json$Json$Decode$list = _Json_decodeList;
 var $author$project$UserApi$Square = F3(
 	function (size, centerLat, centerLng) {
 		return {centerLat: centerLat, centerLng: centerLng, size: size};
 	});
-var $elm$json$Json$Decode$field = _Json_decodeField;
 var $elm$json$Json$Decode$float = _Json_decodeFloat;
-var $elm$json$Json$Decode$int = _Json_decodeInt;
 var $elm$json$Json$Decode$map3 = _Json_map3;
 var $author$project$UserApi$squareDecoder = A4(
 	$elm$json$Json$Decode$map3,
@@ -6333,7 +6344,14 @@ var $author$project$UserApi$squareDecoder = A4(
 	A2($elm$json$Json$Decode$field, 'Size', $elm$json$Json$Decode$int),
 	A2($elm$json$Json$Decode$field, 'CenterLng', $elm$json$Json$Decode$float),
 	A2($elm$json$Json$Decode$field, 'CenterLat', $elm$json$Json$Decode$float));
-var $author$project$UserApi$responseDecoder = $elm$json$Json$Decode$list($author$project$UserApi$squareDecoder);
+var $author$project$UserApi$responseDecoder = A3(
+	$elm$json$Json$Decode$map2,
+	$author$project$UserApi$ServerResponse,
+	A2($elm$json$Json$Decode$field, 'TileSize', $elm$json$Json$Decode$int),
+	A2(
+		$elm$json$Json$Decode$field,
+		'Tiles',
+		$elm$json$Json$Decode$list($author$project$UserApi$squareDecoder)));
 var $author$project$UserApi$fetchSquares = F2(
 	function (data, toMsg) {
 		return $elm$http$Http$post(
@@ -6345,6 +6363,13 @@ var $author$project$UserApi$fetchSquares = F2(
 			});
 	});
 var $elm$core$Platform$Cmd$none = $elm$core$Platform$Cmd$batch(_List_Nil);
+var $elm$core$String$replace = F3(
+	function (before, after, string) {
+		return A2(
+			$elm$core$String$join,
+			after,
+			A2($elm$core$String$split, before, string));
+	});
 var $author$project$Carte$RequestMarker = function (a) {
 	return {$: 'RequestMarker', a: a};
 };
@@ -6704,7 +6729,7 @@ var $author$project$Main$update = F2(
 								{
 									form: _Utils_update(
 										oldForm,
-										{lat: val, typeError: false, validate: false})
+										{lat: val, status: $author$project$Interface$Idle, typeError: false})
 								}),
 							$elm$core$Platform$Cmd$none);
 					case 'Long':
@@ -6715,7 +6740,7 @@ var $author$project$Main$update = F2(
 								{
 									form: _Utils_update(
 										oldForm,
-										{_long: val, typeError: false, validate: false})
+										{_long: val, status: $author$project$Interface$Idle, typeError: false})
 								}),
 							$elm$core$Platform$Cmd$none);
 					case 'Deniv':
@@ -6726,26 +6751,44 @@ var $author$project$Main$update = F2(
 								{
 									form: _Utils_update(
 										oldForm,
-										{d: val, typeError: false, validate: false})
+										{d: val, status: $author$project$Interface$Idle, typeError: false})
+								}),
+							$elm$core$Platform$Cmd$none);
+					case 'Accuracy':
+						var val = interfaceMsg.a;
+						return _Utils_Tuple2(
+							_Utils_update(
+								model,
+								{
+									form: _Utils_update(
+										oldForm,
+										{accuracy: val, status: $author$project$Interface$Idle, typeError: false})
 								}),
 							$elm$core$Platform$Cmd$none);
 					default:
 						var maybeLon = $elm$core$String$toFloat(oldForm._long);
 						var maybeLat = $elm$core$String$toFloat(oldForm.lat);
 						var maybeDeniv = $elm$core$String$toFloat(oldForm.d);
-						var _v2 = _Utils_Tuple3(maybeLat, maybeLon, maybeDeniv);
-						if (((_v2.a.$ === 'Just') && (_v2.b.$ === 'Just')) && (_v2.c.$ === 'Just')) {
-							var lat = _v2.a.a;
-							var lon = _v2.b.a;
-							var deniv = _v2.c.a;
-							var apiData = {deniv: deniv, lat: lat, lng: lon};
-							var _v3 = A2(
+						var maybeAccuracy = $elm$core$String$toFloat(
+							A3($elm$core$String$replace, 'm', '', oldForm.accuracy));
+						var _v2 = _Utils_Tuple2(
+							_Utils_Tuple2(maybeLat, maybeLon),
+							_Utils_Tuple2(maybeDeniv, maybeAccuracy));
+						if ((((_v2.a.a.$ === 'Just') && (_v2.a.b.$ === 'Just')) && (_v2.b.a.$ === 'Just')) && (_v2.b.b.$ === 'Just')) {
+							var _v3 = _v2.a;
+							var lat = _v3.a.a;
+							var lon = _v3.b.a;
+							var _v4 = _v2.b;
+							var deniv = _v4.a.a;
+							var accuracy = _v4.b.a;
+							var apiData = {accuracy: accuracy, deniv: deniv, lat: lat, lng: lon};
+							var _v5 = A2(
 								$author$project$Carte$update,
 								$author$project$Carte$requestMarker(
 									{lat: lat, lon: lon}),
 								model.carte);
-							var newCarte = _v3.a;
-							var carteCmd = _v3.b;
+							var newCarte = _v5.a;
+							var carteCmd = _v5.b;
 							return _Utils_Tuple2(
 								_Utils_update(
 									model,
@@ -6753,8 +6796,7 @@ var $author$project$Main$update = F2(
 										carte: newCarte,
 										form: _Utils_update(
 											oldForm,
-											{typeError: false, validate: true}),
-										status: 'Calcul en cours...'
+											{status: $author$project$Interface$Loading, typeError: false})
 									}),
 								$elm$core$Platform$Cmd$batch(
 									_List_fromArray(
@@ -6769,8 +6811,7 @@ var $author$project$Main$update = F2(
 									{
 										form: _Utils_update(
 											oldForm,
-											{typeError: true}),
-										status: 'Erreur de saisie'
+											{typeError: true})
 									}),
 								$elm$core$Platform$Cmd$none);
 						}
@@ -6778,12 +6819,12 @@ var $author$project$Main$update = F2(
 			case 'MapMsg':
 				var carteMsg = msg.a;
 				var oldForm = model.form;
-				var _v4 = A2($author$project$Carte$update, carteMsg, model.carte);
-				var newCarte = _v4.a;
-				var carteCmd = _v4.b;
-				var _v5 = newCarte.clicked;
-				if (_v5.$ === 'Just') {
-					var coord = _v5.a;
+				var _v6 = A2($author$project$Carte$update, carteMsg, model.carte);
+				var newCarte = _v6.a;
+				var carteCmd = _v6.b;
+				var _v7 = newCarte.clicked;
+				if (_v7.$ === 'Just') {
+					var coord = _v7.a;
 					return _Utils_Tuple2(
 						_Utils_update(
 							model,
@@ -6794,8 +6835,8 @@ var $author$project$Main$update = F2(
 									{
 										lat: A2($myrho$elm_round$Round$round, 6, coord.lat),
 										_long: A2($myrho$elm_round$Round$round, 6, coord.lon),
-										typeError: false,
-										validate: false
+										status: $author$project$Interface$Idle,
+										typeError: false
 									})
 							}),
 						A2($elm$core$Platform$Cmd$map, $author$project$Main$MapMsg, carteCmd));
@@ -6809,23 +6850,25 @@ var $author$project$Main$update = F2(
 			default:
 				var result = msg.a;
 				if (result.$ === 'Ok') {
-					var squares = result.a;
+					var data = result.a;
 					var zoomCmd = $author$project$Carte$autoView(_Utils_Tuple0);
+					var oldForm = model.form;
 					var clearCmd = $author$project$Carte$clearSquares(_Utils_Tuple0);
 					var boundsList = A2(
 						$elm$core$List$map,
 						function (sq) {
-							return $author$project$Draw_square$computeBounds(
-								{centerLat: sq.centerLat, centerLng: sq.centerLng, size: sq.size});
+							return $author$project$DrawSquare$computeBounds(
+								{centerLat: sq.centerLat, centerLng: sq.centerLng, size: sq.size * data.tileSize});
 						},
-						squares);
+						data.tiles);
 					var drawCmds = A2($elm$core$List$map, $author$project$Carte$drawSquare, boundsList);
 					return _Utils_Tuple2(
 						_Utils_update(
 							model,
 							{
-								status: 'Succès : ' + ($elm$core$String$fromInt(
-									$elm$core$List$length(squares)) + ' carrés.')
+								form: _Utils_update(
+									oldForm,
+									{status: $author$project$Interface$Success})
 							}),
 						$elm$core$Platform$Cmd$batch(
 							A2(
@@ -6841,10 +6884,15 @@ var $author$project$Main$update = F2(
 											A2($elm$core$Platform$Cmd$map, $author$project$Main$MapMsg, zoomCmd)
 										])))));
 				} else {
+					var oldForm = model.form;
 					return _Utils_Tuple2(
 						_Utils_update(
 							model,
-							{status: 'Erreur serveur.'}),
+							{
+								form: _Utils_update(
+									oldForm,
+									{status: $author$project$Interface$Error})
+							}),
 						$elm$core$Platform$Cmd$none);
 				}
 		}
@@ -6911,7 +6959,9 @@ var $elm$html$Html$Events$onClick = function (msg) {
 };
 var $elm$virtual_dom$VirtualDom$text = _VirtualDom_text;
 var $elm$html$Html$text = $elm$virtual_dom$VirtualDom$text;
-var $elm$html$Html$input = _VirtualDom_node('input');
+var $author$project$Interface$Accuracy = function (a) {
+	return {$: 'Accuracy', a: a};
+};
 var $elm$html$Html$Events$alwaysStop = function (x) {
 	return _Utils_Tuple2(x, true);
 };
@@ -6944,6 +6994,17 @@ var $elm$html$Html$Events$onInput = function (tagger) {
 			$elm$html$Html$Events$alwaysStop,
 			A2($elm$json$Json$Decode$map, tagger, $elm$html$Html$Events$targetValue)));
 };
+var $elm$html$Html$option = _VirtualDom_node('option');
+var $elm$html$Html$select = _VirtualDom_node('select');
+var $elm$json$Json$Encode$bool = _Json_wrap;
+var $elm$html$Html$Attributes$boolProperty = F2(
+	function (key, bool) {
+		return A2(
+			_VirtualDom_property,
+			key,
+			$elm$json$Json$Encode$bool(bool));
+	});
+var $elm$html$Html$Attributes$selected = $elm$html$Html$Attributes$boolProperty('selected');
 var $elm$json$Json$Encode$string = _Json_wrap;
 var $elm$html$Html$Attributes$stringProperty = F2(
 	function (key, string) {
@@ -6952,9 +7013,38 @@ var $elm$html$Html$Attributes$stringProperty = F2(
 			key,
 			$elm$json$Json$Encode$string(string));
 	});
+var $elm$html$Html$Attributes$value = $elm$html$Html$Attributes$stringProperty('value');
+var $author$project$Interface$viewDropdown = function (currentAccuracy) {
+	var renderOption = function (val) {
+		return A2(
+			$elm$html$Html$option,
+			_List_fromArray(
+				[
+					$elm$html$Html$Attributes$value(val),
+					$elm$html$Html$Attributes$selected(
+					_Utils_eq(val, currentAccuracy))
+				]),
+			_List_fromArray(
+				[
+					$elm$html$Html$text(val)
+				]));
+	};
+	return A2(
+		$elm$html$Html$select,
+		_List_fromArray(
+			[
+				$elm$html$Html$Events$onInput($author$project$Interface$Accuracy)
+			]),
+		_List_fromArray(
+			[
+				renderOption('1m'),
+				renderOption('5m'),
+				renderOption('25m')
+			]));
+};
+var $elm$html$Html$input = _VirtualDom_node('input');
 var $elm$html$Html$Attributes$placeholder = $elm$html$Html$Attributes$stringProperty('placeholder');
 var $elm$html$Html$Attributes$type_ = $elm$html$Html$Attributes$stringProperty('type');
-var $elm$html$Html$Attributes$value = $elm$html$Html$Attributes$stringProperty('value');
 var $author$project$Interface$viewInput = F4(
 	function (t, p, v, toMsg) {
 		return A2(
@@ -7010,25 +7100,39 @@ var $author$project$Interface$mainView = function (model) {
 						A4($author$project$Interface$viewInput, 'text', 'Latitude', model.lat, $author$project$Interface$Lat),
 						A4($author$project$Interface$viewInput, 'text', 'Longitude', model._long, $author$project$Interface$Long),
 						A4($author$project$Interface$viewInput, 'text', 'Dénivelé', model.d, $author$project$Interface$Deniv),
-						A2(
-						$elm$html$Html$button,
-						A2(
-							$elm$core$List$cons,
-							$elm$html$Html$Events$onClick($author$project$Interface$Validate),
-							_Utils_ap(
-								$author$project$Interface$buttonStyle,
-								_List_fromArray(
-									[
-										A2(
-										$elm$html$Html$Attributes$style,
-										'background-color',
-										model.validate ? '#27ae60' : '#4a90e2')
-									]))),
-						_List_fromArray(
-							[
-								$elm$html$Html$text(
-								model.validate ? 'Calcul en cours...' : 'Calculer la zone')
-							])),
+						$author$project$Interface$viewDropdown(model.accuracy),
+						function () {
+						var _v0 = function () {
+							var _v1 = model.status;
+							switch (_v1.$) {
+								case 'Idle':
+									return _Utils_Tuple2('Calculer la zone', '#4a90e2');
+								case 'Loading':
+									return _Utils_Tuple2('Calcul en cours...', '#f39c12');
+								case 'Success':
+									return _Utils_Tuple2('C\'est bon !', '#27ae60');
+								default:
+									return _Utils_Tuple2('Erreur serveur', '#e74c3c');
+							}
+						}();
+						var btnText = _v0.a;
+						var btnColor = _v0.b;
+						return A2(
+							$elm$html$Html$button,
+							A2(
+								$elm$core$List$cons,
+								$elm$html$Html$Events$onClick($author$project$Interface$Validate),
+								_Utils_ap(
+									$author$project$Interface$buttonStyle,
+									_List_fromArray(
+										[
+											A2($elm$html$Html$Attributes$style, 'background-color', btnColor)
+										]))),
+							_List_fromArray(
+								[
+									$elm$html$Html$text(btnText)
+								]));
+					}(),
 						$author$project$Interface$viewValidation(model)
 					]))
 			]));

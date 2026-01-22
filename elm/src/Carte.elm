@@ -17,7 +17,7 @@ port module Carte exposing
 import Html exposing (Html, div)
 import Html.Attributes exposing (id)
 import Json.Decode as Decode
-import Draw_square
+import DrawSquare
 
 
 
@@ -29,7 +29,7 @@ port initMap :
 
 
 port drawSquare :
-    Draw_square.Bounds
+    DrawSquare.Bounds
     -> Cmd msg --  -- envoi au JS la commande de traçage des carrés avec en entrée une liste de carrés avec leurs coordonnées
 
 

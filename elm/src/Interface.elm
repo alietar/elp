@@ -1,4 +1,4 @@
-module Interface exposing (mainView, Model, Msg(..))
+module Interface exposing (mainView, Model, Msg(..), ButtonStatus(..))
 
 import Html exposing (..)
 import Html.Attributes exposing (..)
@@ -42,14 +42,22 @@ type alias Model =
     { lat : String
     , long : String
     , d : String
-    , validate : Bool
+    , accuracy : String
+    , status : ButtonStatus
     , typeError : Bool
     }
+
+type ButtonStatus
+    = Idle          -- Au repos (pas encore cliqué)
+    | Loading       -- En cours de chargement
+    | Success       -- Requête réussie ("C'est bon")
+    | Error         -- Erreur serveur ("Pas bon")
 
 type Msg
   = Lat String
   | Long String
   | Deniv String
+  | Accuracy String
   | Validate
 
 -- VIEW
@@ -69,16 +77,46 @@ mainView model =
       , viewInput "text" "Latitude" model.lat Lat
       , viewInput "text" "Longitude" model.long Long
       , viewInput "text" "Dénivelé" model.d Deniv
-      , button
+      , viewDropdown model.accuracy
+      , let
+          ( btnText, btnColor ) =
+            case model.status of
+              Idle ->
+                ( "Calculer la zone", "#4a90e2" )
+
+              Loading ->
+                ( "Calcul en cours...", "#f39c12" )
+
+              Success ->
+                ( "C'est bon !", "#27ae60" )
+
+              Error ->
+                ( "Erreur serveur", "#e74c3c" )
+        in
+        button
           (onClick Validate
               :: buttonStyle
-              ++ [ style "background-color" (if model.validate then "#27ae60" else "#4a90e2") ]
+              ++ [ style "background-color" btnColor ]
           )
-          [ text (if model.validate then "Calcul en cours..." else "Calculer la zone") ]
-      
+          [ text btnText ]
+
       , viewValidation model
       ]
   ]
+
+viewDropdown : String -> Html Msg
+viewDropdown currentAccuracy =
+    let
+        renderOption val =
+            option 
+                [ value val, selected (val == currentAccuracy) ] 
+                [ text val ]
+    in
+    select [ onInput Accuracy ]
+        [ renderOption "1m"
+        , renderOption "5m"
+        , renderOption "25m"
+        ]
 
 
 viewInput : String -> String -> String -> (String -> msg) -> Html msg

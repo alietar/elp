@@ -5,7 +5,7 @@ import Html exposing (Html, div)
 import Http
 
 import Carte
-import Draw_square
+import DrawSquare
 import Interface
 import UserApi
 import Round
@@ -17,8 +17,8 @@ import Round
 type alias Model =
     { carte : Carte.Model
     , form : Interface.Model
-    , status : String
     }
+
 
 
 
@@ -43,13 +43,13 @@ init _ =
             { lat = ""
             , long = ""
             , d = ""
-            , validate = False
+            , accuracy = "25m"
+            , status = Interface.Idle
             , typeError = False
             }
     in
     ( { carte = carteModel
       , form = initialForm
-      , status = "Prêt."
       }
     , Cmd.map MapMsg carteCmd
     )
@@ -72,13 +72,12 @@ update msg model =
                     model.form
             in
             case interfaceMsg of
-
                 Interface.Lat val -> -- mise à jour de latitude si message de l'interface
                     ( { model
                         | form =
                             { oldForm
                                 | lat = val
-                                , validate = False
+                                , status = Interface.Idle
                                 , typeError = False
                             }
                       }
@@ -90,7 +89,7 @@ update msg model =
                         | form =
                             { oldForm
                                 | long = val
-                                , validate = False
+                                , status = Interface.Idle
                                 , typeError = False
                             }
                       }
@@ -102,7 +101,19 @@ update msg model =
                         | form =
                             { oldForm
                                 | d = val
-                                , validate = False
+                                , status = Interface.Idle
+                                , typeError = False
+                            }
+                      }
+                    , Cmd.none
+                    )
+
+                Interface.Accuracy val ->
+                    ( { model
+                        | form =
+                            { oldForm
+                                | accuracy = val
+                                , status = Interface.Idle
                                 , typeError = False
                             }
                       }
@@ -119,14 +130,19 @@ update msg model =
 
                         maybeDeniv =
                             String.toFloat oldForm.d
+                        maybeAccuracy =
+                            oldForm.accuracy
+                                |> String.replace "m" ""
+                                |> String.toFloat
                     in
-                    case ( maybeLat, maybeLon, maybeDeniv ) of
-                        ( Just lat, Just lon, Just deniv ) ->
+                    case ( (maybeLat, maybeLon), (maybeDeniv, maybeAccuracy) ) of
+                        ( (Just lat, Just lon), (Just deniv, Just accuracy) ) ->
                             let
                                 apiData =
                                     { lat = lat
                                     , lng = lon
                                     , deniv = deniv
+                                    , accuracy = accuracy
                                     }
 
                                 -- 🔹 on déclenche la carte ICI
@@ -141,10 +157,9 @@ update msg model =
                             in
                             ( { model
                                 | carte = newCarte
-                                , status = "Calcul en cours..."
                                 , form =
                                     { oldForm
-                                        | validate = True
+                                        | status = Interface.Loading
                                         , typeError = False
                                     }
                               }
@@ -156,8 +171,7 @@ update msg model =
 
                         _ ->
                             ( { model
-                                | status = "Erreur de saisie"
-                                , form =
+                                | form =
                                     { oldForm | typeError = True }
                               }
                             , Cmd.none
@@ -184,7 +198,7 @@ update msg model =
                             { oldForm
                                 | lat = Round.round 6 coord.lat -- on arrondi à 6 chiffres après la virgule les coordonnées cliquées
                                 , long = Round.round 6 coord.lon
-                                , validate = False
+                                , status = Interface.Idle
                                 , typeError = False
                             }
                       }
@@ -203,18 +217,19 @@ update msg model =
 
         GotSquares result ->
             case result of
-                Ok squares ->
+                Ok data ->
                     let
+                        oldForm = model.form
                         boundsList = -- calcul des coordonnées des 4 sommets des carrées/rectangles
                             List.map
                                 (\sq ->
-                                    Draw_square.computeBounds
-                                        { size = sq.size
+                                    DrawSquare.computeBounds
+                                        { size = sq.size * data.tileSize
                                         , centerLat = sq.centerLat
                                         , centerLng = sq.centerLng
                                         }
                                 )
-                                squares
+                                data.tiles
 
                         drawCmds =
                             List.map Carte.drawSquare boundsList -- on envoie la commande pour tracer les carrés
@@ -226,10 +241,7 @@ update msg model =
                             Carte.autoView ()
                     in
                     ( { model
-                        | status =
-                            "Succès : "
-                                ++ String.fromInt (List.length squares)
-                                ++ " carrés."
+                        | form = { oldForm | status = Interface.Success }
                       }
                     , Cmd.batch
                         (Cmd.map MapMsg clearCmd
@@ -239,7 +251,12 @@ update msg model =
                     )
 
                 Err _ ->
-                    ( { model | status = "Erreur serveur." }
+                    let
+                        oldForm = model.form
+                    in
+                    ( { model
+                        | form = { oldForm | status = Interface.Error }
+                    }
                     , Cmd.none
                     )
 

@@ -1,4 +1,4 @@
-module Draw_square exposing (Params, Bounds, computeBounds)
+module DrawSquare exposing (Params, Bounds, computeBounds)
 
 
 -- STRUCTURE D’ENTRÉE
@@ -35,11 +35,11 @@ latFactor =
 computeBounds : Params -> Bounds
 computeBounds p = -- permettre de calculer les 4 coins des carrés 
     { southWest =
-        ( p.centerLng - lngFactor * toFloat p.size
-        , p.centerLat - latFactor * toFloat p.size
+        ( p.centerLng - lngFactor / 25 * toFloat p.size
+        , p.centerLat - latFactor / 25 * toFloat p.size
         )
     , northEast =
-        ( p.centerLng + lngFactor * toFloat p.size
-        , p.centerLat + latFactor * toFloat p.size
+        ( p.centerLng + lngFactor / 25 * toFloat p.size
+        , p.centerLat + latFactor / 25 * toFloat p.size
         )
     }
