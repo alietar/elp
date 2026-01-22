@@ -4553,7 +4553,44 @@ function _Http_track(router, xhr, tracker)
 			size: event.lengthComputable ? $elm$core$Maybe$Just(event.total) : $elm$core$Maybe$Nothing
 		}))));
 	});
-}var $elm$core$Basics$EQ = {$: 'EQ'};
+}
+
+
+var _Bitwise_and = F2(function(a, b)
+{
+	return a & b;
+});
+
+var _Bitwise_or = F2(function(a, b)
+{
+	return a | b;
+});
+
+var _Bitwise_xor = F2(function(a, b)
+{
+	return a ^ b;
+});
+
+function _Bitwise_complement(a)
+{
+	return ~a;
+};
+
+var _Bitwise_shiftLeftBy = F2(function(offset, a)
+{
+	return a << offset;
+});
+
+var _Bitwise_shiftRightBy = F2(function(offset, a)
+{
+	return a >> offset;
+});
+
+var _Bitwise_shiftRightZfBy = F2(function(offset, a)
+{
+	return a >>> offset;
+});
+var $elm$core$Basics$EQ = {$: 'EQ'};
 var $elm$core$Basics$GT = {$: 'GT'};
 var $elm$core$Basics$LT = {$: 'LT'};
 var $elm$core$List$cons = _List_cons;
@@ -5342,6 +5379,9 @@ var $elm$core$Task$perform = F2(
 				A2($elm$core$Task$map, toMessage, task)));
 	});
 var $elm$browser$Browser$element = _Browser_element;
+var $author$project$Main$MapMsg = function (a) {
+	return {$: 'MapMsg', a: a};
+};
 var $elm$json$Json$Encode$float = _Json_wrap;
 var $elm$json$Json$Encode$int = _Json_wrap;
 var $elm$json$Json$Encode$object = function (pairs) {
@@ -5375,20 +5415,34 @@ var $author$project$Carte$initMap = _Platform_outgoingPort(
 				]));
 	});
 var $author$project$Carte$init = _Utils_Tuple2(
-	_Utils_Tuple0,
+	{clicked: $elm$core$Maybe$Nothing},
 	$author$project$Carte$initMap(
 		{lat: 46.603354, lon: 1.888334, zoom: 6}));
+var $elm$core$Platform$Cmd$map = _Platform_map;
 var $author$project$Main$init = function (_v0) {
 	var initialForm = {d: '', lat: '', _long: '', typeError: false, validate: false};
 	var _v1 = $author$project$Carte$init;
 	var carteModel = _v1.a;
 	var carteCmd = _v1.b;
 	return _Utils_Tuple2(
-		{carte: carteModel, form: initialForm, status: 'Prêt à charger les carrés.'},
-		carteCmd);
+		{carte: carteModel, form: initialForm, status: 'Prêt.'},
+		A2($elm$core$Platform$Cmd$map, $author$project$Main$MapMsg, carteCmd));
 };
-var $elm$core$Platform$Sub$batch = _Platform_batch;
-var $elm$core$Platform$Sub$none = $elm$core$Platform$Sub$batch(_List_Nil);
+var $elm$core$Platform$Sub$map = _Platform_map;
+var $author$project$Carte$Click = function (a) {
+	return {$: 'Click', a: a};
+};
+var $elm$json$Json$Decode$value = _Json_decodeValue;
+var $author$project$Carte$click_coord = _Platform_incomingPort('click_coord', $elm$json$Json$Decode$value);
+var $author$project$Carte$subscriptions = function (_v0) {
+	return $author$project$Carte$click_coord($author$project$Carte$Click);
+};
+var $author$project$Main$subscriptions = function (model) {
+	return A2(
+		$elm$core$Platform$Sub$map,
+		$author$project$Main$MapMsg,
+		$author$project$Carte$subscriptions(model.carte));
+};
 var $author$project$Main$GotSquares = function (a) {
 	return {$: 'GotSquares', a: a};
 };
@@ -5403,11 +5457,6 @@ var $author$project$Carte$clearSquares = _Platform_outgoingPort(
 	'clearSquares',
 	function ($) {
 		return $elm$json$Json$Encode$null;
-	});
-var $elm$core$Basics$composeR = F3(
-	function (f, g, x) {
-		return g(
-			f(x));
 	});
 var $author$project$Draw_square$latFactor = 0.000117;
 var $author$project$Draw_square$lngFactor = 0.000167;
@@ -6020,6 +6069,11 @@ var $elm$core$Dict$update = F3(
 			return A2($elm$core$Dict$remove, targetKey, dictionary);
 		}
 	});
+var $elm$core$Basics$composeR = F3(
+	function (f, g, x) {
+		return g(
+			f(x));
+	});
 var $elm$http$Http$expectStringResponse = F2(
 	function (toMsg, toResult) {
 		return A3(
@@ -6291,115 +6345,508 @@ var $author$project$UserApi$fetchSquares = F2(
 			});
 	});
 var $elm$core$Platform$Cmd$none = $elm$core$Platform$Cmd$batch(_List_Nil);
-var $elm$core$String$toFloat = _String_toFloat;
-var $author$project$Main$update = F2(
-	function (msg, model) {
-		if (msg.$ === 'FormMsg') {
-			var interfaceMsg = msg.a;
-			switch (interfaceMsg.$) {
-				case 'Lat':
-					var val = interfaceMsg.a;
-					var oldForm = model.form;
-					return _Utils_Tuple2(
-						_Utils_update(
-							model,
-							{
-								form: _Utils_update(
-									oldForm,
-									{lat: val, typeError: false, validate: false})
-							}),
-						$elm$core$Platform$Cmd$none);
-				case 'Long':
-					var val = interfaceMsg.a;
-					var oldForm = model.form;
-					return _Utils_Tuple2(
-						_Utils_update(
-							model,
-							{
-								form: _Utils_update(
-									oldForm,
-									{_long: val, typeError: false, validate: false})
-							}),
-						$elm$core$Platform$Cmd$none);
-				case 'Deniv':
-					var val = interfaceMsg.a;
-					var oldForm = model.form;
-					return _Utils_Tuple2(
-						_Utils_update(
-							model,
-							{
-								form: _Utils_update(
-									oldForm,
-									{d: val, typeError: false, validate: false})
-							}),
-						$elm$core$Platform$Cmd$none);
-				default:
-					var maybeLng = $elm$core$String$toFloat(model.form._long);
-					var maybeLat = $elm$core$String$toFloat(model.form.lat);
-					var maybeDeniv = $elm$core$String$toFloat(model.form.d);
-					var _v2 = _Utils_Tuple3(maybeLat, maybeLng, maybeDeniv);
-					if (((_v2.a.$ === 'Just') && (_v2.b.$ === 'Just')) && (_v2.c.$ === 'Just')) {
-						var lat = _v2.a.a;
-						var lng = _v2.b.a;
-						var deniv = _v2.c.a;
-						var oldForm = model.form;
-						var newForm = _Utils_update(
-							oldForm,
-							{typeError: false, validate: true});
-						var apiData = {deniv: deniv, lat: lat, lng: lng};
-						return _Utils_Tuple2(
-							_Utils_update(
-								model,
-								{form: newForm, status: 'Chargement...'}),
-							A2($author$project$UserApi$fetchSquares, apiData, $author$project$Main$GotSquares));
-					} else {
-						var oldForm = model.form;
-						var newForm = _Utils_update(
-							oldForm,
-							{typeError: true, validate: false});
-						return _Utils_Tuple2(
-							_Utils_update(
-								model,
-								{form: newForm, status: 'Erreur de saisie.'}),
-							$elm$core$Platform$Cmd$none);
-					}
+var $author$project$Carte$RequestMarker = function (a) {
+	return {$: 'RequestMarker', a: a};
+};
+var $author$project$Carte$requestMarker = function (coord) {
+	return $author$project$Carte$RequestMarker(coord);
+};
+var $elm$core$Basics$ge = _Utils_ge;
+var $elm$core$Basics$not = _Basics_not;
+var $elm$core$Basics$negate = function (n) {
+	return -n;
+};
+var $elm$core$Basics$abs = function (n) {
+	return (n < 0) ? (-n) : n;
+};
+var $elm$core$List$any = F2(
+	function (isOkay, list) {
+		any:
+		while (true) {
+			if (!list.b) {
+				return false;
+			} else {
+				var x = list.a;
+				var xs = list.b;
+				if (isOkay(x)) {
+					return true;
+				} else {
+					var $temp$isOkay = isOkay,
+						$temp$list = xs;
+					isOkay = $temp$isOkay;
+					list = $temp$list;
+					continue any;
+				}
 			}
+		}
+	});
+var $elm$core$Basics$neq = _Utils_notEqual;
+var $elm$core$String$foldr = _String_foldr;
+var $elm$core$String$toList = function (string) {
+	return A3($elm$core$String$foldr, $elm$core$List$cons, _List_Nil, string);
+};
+var $myrho$elm_round$Round$addSign = F2(
+	function (signed, str) {
+		var isNotZero = A2(
+			$elm$core$List$any,
+			function (c) {
+				return (!_Utils_eq(
+					c,
+					_Utils_chr('0'))) && (!_Utils_eq(
+					c,
+					_Utils_chr('.')));
+			},
+			$elm$core$String$toList(str));
+		return _Utils_ap(
+			(signed && isNotZero) ? '-' : '',
+			str);
+	});
+var $elm$core$String$fromFloat = _String_fromNumber;
+var $elm$core$String$cons = _String_cons;
+var $elm$core$Char$fromCode = _Char_fromCode;
+var $myrho$elm_round$Round$increaseNum = function (_v0) {
+	var head = _v0.a;
+	var tail = _v0.b;
+	if (_Utils_eq(
+		head,
+		_Utils_chr('9'))) {
+		var _v1 = $elm$core$String$uncons(tail);
+		if (_v1.$ === 'Nothing') {
+			return '01';
 		} else {
-			var result = msg.a;
-			if (result.$ === 'Ok') {
-				var squares = result.a;
-				var zoomCmd = $author$project$Carte$autoView(_Utils_Tuple0);
-				var toParams = function (sq) {
-					return {centerLat: sq.centerLat, centerLng: sq.centerLng, size: sq.size};
-				};
-				var clearCmd = $author$project$Carte$clearSquares(_Utils_Tuple0);
-				var boundsList = A2(
-					$elm$core$List$map,
-					A2($elm$core$Basics$composeR, toParams, $author$project$Draw_square$computeBounds),
-					squares);
-				var drawCmds = A2($elm$core$List$map, $author$project$Carte$drawSquare, boundsList);
+			var headtail = _v1.a;
+			return A2(
+				$elm$core$String$cons,
+				_Utils_chr('0'),
+				$myrho$elm_round$Round$increaseNum(headtail));
+		}
+	} else {
+		var c = $elm$core$Char$toCode(head);
+		return ((c >= 48) && (c < 57)) ? A2(
+			$elm$core$String$cons,
+			$elm$core$Char$fromCode(c + 1),
+			tail) : '0';
+	}
+};
+var $elm$core$Basics$isInfinite = _Basics_isInfinite;
+var $elm$core$Basics$isNaN = _Basics_isNaN;
+var $elm$core$Maybe$map = F2(
+	function (f, maybe) {
+		if (maybe.$ === 'Just') {
+			var value = maybe.a;
+			return $elm$core$Maybe$Just(
+				f(value));
+		} else {
+			return $elm$core$Maybe$Nothing;
+		}
+	});
+var $elm$core$String$fromChar = function (_char) {
+	return A2($elm$core$String$cons, _char, '');
+};
+var $elm$core$Bitwise$and = _Bitwise_and;
+var $elm$core$Bitwise$shiftRightBy = _Bitwise_shiftRightBy;
+var $elm$core$String$repeatHelp = F3(
+	function (n, chunk, result) {
+		return (n <= 0) ? result : A3(
+			$elm$core$String$repeatHelp,
+			n >> 1,
+			_Utils_ap(chunk, chunk),
+			(!(n & 1)) ? result : _Utils_ap(result, chunk));
+	});
+var $elm$core$String$repeat = F2(
+	function (n, chunk) {
+		return A3($elm$core$String$repeatHelp, n, chunk, '');
+	});
+var $elm$core$String$padRight = F3(
+	function (n, _char, string) {
+		return _Utils_ap(
+			string,
+			A2(
+				$elm$core$String$repeat,
+				n - $elm$core$String$length(string),
+				$elm$core$String$fromChar(_char)));
+	});
+var $elm$core$String$reverse = _String_reverse;
+var $myrho$elm_round$Round$splitComma = function (str) {
+	var _v0 = A2($elm$core$String$split, '.', str);
+	if (_v0.b) {
+		if (_v0.b.b) {
+			var before = _v0.a;
+			var _v1 = _v0.b;
+			var after = _v1.a;
+			return _Utils_Tuple2(before, after);
+		} else {
+			var before = _v0.a;
+			return _Utils_Tuple2(before, '0');
+		}
+	} else {
+		return _Utils_Tuple2('0', '0');
+	}
+};
+var $elm$core$Tuple$mapFirst = F2(
+	function (func, _v0) {
+		var x = _v0.a;
+		var y = _v0.b;
+		return _Utils_Tuple2(
+			func(x),
+			y);
+	});
+var $elm$core$Maybe$withDefault = F2(
+	function (_default, maybe) {
+		if (maybe.$ === 'Just') {
+			var value = maybe.a;
+			return value;
+		} else {
+			return _default;
+		}
+	});
+var $myrho$elm_round$Round$toDecimal = function (fl) {
+	var _v0 = A2(
+		$elm$core$String$split,
+		'e',
+		$elm$core$String$fromFloat(
+			$elm$core$Basics$abs(fl)));
+	if (_v0.b) {
+		if (_v0.b.b) {
+			var num = _v0.a;
+			var _v1 = _v0.b;
+			var exp = _v1.a;
+			var e = A2(
+				$elm$core$Maybe$withDefault,
+				0,
+				$elm$core$String$toInt(
+					A2($elm$core$String$startsWith, '+', exp) ? A2($elm$core$String$dropLeft, 1, exp) : exp));
+			var _v2 = $myrho$elm_round$Round$splitComma(num);
+			var before = _v2.a;
+			var after = _v2.b;
+			var total = _Utils_ap(before, after);
+			var zeroed = (e < 0) ? A2(
+				$elm$core$Maybe$withDefault,
+				'0',
+				A2(
+					$elm$core$Maybe$map,
+					function (_v3) {
+						var a = _v3.a;
+						var b = _v3.b;
+						return a + ('.' + b);
+					},
+					A2(
+						$elm$core$Maybe$map,
+						$elm$core$Tuple$mapFirst($elm$core$String$fromChar),
+						$elm$core$String$uncons(
+							_Utils_ap(
+								A2(
+									$elm$core$String$repeat,
+									$elm$core$Basics$abs(e),
+									'0'),
+								total))))) : A3(
+				$elm$core$String$padRight,
+				e + 1,
+				_Utils_chr('0'),
+				total);
+			return _Utils_ap(
+				(fl < 0) ? '-' : '',
+				zeroed);
+		} else {
+			var num = _v0.a;
+			return _Utils_ap(
+				(fl < 0) ? '-' : '',
+				num);
+		}
+	} else {
+		return '';
+	}
+};
+var $myrho$elm_round$Round$roundFun = F3(
+	function (functor, s, fl) {
+		if ($elm$core$Basics$isInfinite(fl) || $elm$core$Basics$isNaN(fl)) {
+			return $elm$core$String$fromFloat(fl);
+		} else {
+			var signed = fl < 0;
+			var _v0 = $myrho$elm_round$Round$splitComma(
+				$myrho$elm_round$Round$toDecimal(
+					$elm$core$Basics$abs(fl)));
+			var before = _v0.a;
+			var after = _v0.b;
+			var r = $elm$core$String$length(before) + s;
+			var normalized = _Utils_ap(
+				A2($elm$core$String$repeat, (-r) + 1, '0'),
+				A3(
+					$elm$core$String$padRight,
+					r,
+					_Utils_chr('0'),
+					_Utils_ap(before, after)));
+			var totalLen = $elm$core$String$length(normalized);
+			var roundDigitIndex = A2($elm$core$Basics$max, 1, r);
+			var increase = A2(
+				functor,
+				signed,
+				A3($elm$core$String$slice, roundDigitIndex, totalLen, normalized));
+			var remains = A3($elm$core$String$slice, 0, roundDigitIndex, normalized);
+			var num = increase ? $elm$core$String$reverse(
+				A2(
+					$elm$core$Maybe$withDefault,
+					'1',
+					A2(
+						$elm$core$Maybe$map,
+						$myrho$elm_round$Round$increaseNum,
+						$elm$core$String$uncons(
+							$elm$core$String$reverse(remains))))) : remains;
+			var numLen = $elm$core$String$length(num);
+			var numZeroed = (num === '0') ? num : ((s <= 0) ? _Utils_ap(
+				num,
+				A2(
+					$elm$core$String$repeat,
+					$elm$core$Basics$abs(s),
+					'0')) : ((_Utils_cmp(
+				s,
+				$elm$core$String$length(after)) < 0) ? (A3($elm$core$String$slice, 0, numLen - s, num) + ('.' + A3($elm$core$String$slice, numLen - s, numLen, num))) : _Utils_ap(
+				before + '.',
+				A3(
+					$elm$core$String$padRight,
+					s,
+					_Utils_chr('0'),
+					after))));
+			return A2($myrho$elm_round$Round$addSign, signed, numZeroed);
+		}
+	});
+var $myrho$elm_round$Round$round = $myrho$elm_round$Round$roundFun(
+	F2(
+		function (signed, str) {
+			var _v0 = $elm$core$String$uncons(str);
+			if (_v0.$ === 'Nothing') {
+				return false;
+			} else {
+				if ('5' === _v0.a.a.valueOf()) {
+					if (_v0.a.b === '') {
+						var _v1 = _v0.a;
+						return !signed;
+					} else {
+						var _v2 = _v0.a;
+						return true;
+					}
+				} else {
+					var _v3 = _v0.a;
+					var _int = _v3.a;
+					return function (i) {
+						return ((i > 53) && signed) || ((i >= 53) && (!signed));
+					}(
+						$elm$core$Char$toCode(_int));
+				}
+			}
+		}));
+var $elm$core$String$toFloat = _String_toFloat;
+var $author$project$Carte$addMarker = _Platform_outgoingPort(
+	'addMarker',
+	function ($) {
+		return $elm$json$Json$Encode$object(
+			_List_fromArray(
+				[
+					_Utils_Tuple2(
+					'lat',
+					$elm$json$Json$Encode$float($.lat)),
+					_Utils_Tuple2(
+					'lon',
+					$elm$json$Json$Encode$float($.lon))
+				]));
+	});
+var $author$project$Carte$Coord = F2(
+	function (lat, lon) {
+		return {lat: lat, lon: lon};
+	});
+var $author$project$Carte$coordDecoder = A3(
+	$elm$json$Json$Decode$map2,
+	$author$project$Carte$Coord,
+	A2($elm$json$Json$Decode$field, 'lat', $elm$json$Json$Decode$float),
+	A2($elm$json$Json$Decode$field, 'long', $elm$json$Json$Decode$float));
+var $elm$json$Json$Decode$decodeValue = _Json_run;
+var $author$project$Carte$update = F2(
+	function (msg, model) {
+		if (msg.$ === 'Click') {
+			var value = msg.a;
+			var _v1 = A2($elm$json$Json$Decode$decodeValue, $author$project$Carte$coordDecoder, value);
+			if (_v1.$ === 'Ok') {
+				var coord = _v1.a;
 				return _Utils_Tuple2(
 					_Utils_update(
 						model,
 						{
-							status: 'Succès : ' + ($elm$core$String$fromInt(
-								$elm$core$List$length(squares)) + ' carrés.')
+							clicked: $elm$core$Maybe$Just(coord)
 						}),
-					$elm$core$Platform$Cmd$batch(
-						A2(
-							$elm$core$List$cons,
-							clearCmd,
-							_Utils_ap(
-								drawCmds,
-								_List_fromArray(
-									[zoomCmd])))));
-			} else {
-				return _Utils_Tuple2(
-					_Utils_update(
-						model,
-						{status: 'Erreur lors de la récupération des données.'}),
 					$elm$core$Platform$Cmd$none);
+			} else {
+				return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
 			}
+		} else {
+			var coord = msg.a;
+			return _Utils_Tuple2(
+				_Utils_update(
+					model,
+					{
+						clicked: $elm$core$Maybe$Just(coord)
+					}),
+				$author$project$Carte$addMarker(
+					{lat: coord.lat, lon: coord.lon}));
+		}
+	});
+var $author$project$Main$update = F2(
+	function (msg, model) {
+		switch (msg.$) {
+			case 'FormMsg':
+				var interfaceMsg = msg.a;
+				var oldForm = model.form;
+				switch (interfaceMsg.$) {
+					case 'Lat':
+						var val = interfaceMsg.a;
+						return _Utils_Tuple2(
+							_Utils_update(
+								model,
+								{
+									form: _Utils_update(
+										oldForm,
+										{lat: val, typeError: false, validate: false})
+								}),
+							$elm$core$Platform$Cmd$none);
+					case 'Long':
+						var val = interfaceMsg.a;
+						return _Utils_Tuple2(
+							_Utils_update(
+								model,
+								{
+									form: _Utils_update(
+										oldForm,
+										{_long: val, typeError: false, validate: false})
+								}),
+							$elm$core$Platform$Cmd$none);
+					case 'Deniv':
+						var val = interfaceMsg.a;
+						return _Utils_Tuple2(
+							_Utils_update(
+								model,
+								{
+									form: _Utils_update(
+										oldForm,
+										{d: val, typeError: false, validate: false})
+								}),
+							$elm$core$Platform$Cmd$none);
+					default:
+						var maybeLon = $elm$core$String$toFloat(oldForm._long);
+						var maybeLat = $elm$core$String$toFloat(oldForm.lat);
+						var maybeDeniv = $elm$core$String$toFloat(oldForm.d);
+						var _v2 = _Utils_Tuple3(maybeLat, maybeLon, maybeDeniv);
+						if (((_v2.a.$ === 'Just') && (_v2.b.$ === 'Just')) && (_v2.c.$ === 'Just')) {
+							var lat = _v2.a.a;
+							var lon = _v2.b.a;
+							var deniv = _v2.c.a;
+							var apiData = {deniv: deniv, lat: lat, lng: lon};
+							var _v3 = A2(
+								$author$project$Carte$update,
+								$author$project$Carte$requestMarker(
+									{lat: lat, lon: lon}),
+								model.carte);
+							var newCarte = _v3.a;
+							var carteCmd = _v3.b;
+							return _Utils_Tuple2(
+								_Utils_update(
+									model,
+									{
+										carte: newCarte,
+										form: _Utils_update(
+											oldForm,
+											{typeError: false, validate: true}),
+										status: 'Calcul en cours...'
+									}),
+								$elm$core$Platform$Cmd$batch(
+									_List_fromArray(
+										[
+											A2($author$project$UserApi$fetchSquares, apiData, $author$project$Main$GotSquares),
+											A2($elm$core$Platform$Cmd$map, $author$project$Main$MapMsg, carteCmd)
+										])));
+						} else {
+							return _Utils_Tuple2(
+								_Utils_update(
+									model,
+									{
+										form: _Utils_update(
+											oldForm,
+											{typeError: true}),
+										status: 'Erreur de saisie'
+									}),
+								$elm$core$Platform$Cmd$none);
+						}
+				}
+			case 'MapMsg':
+				var carteMsg = msg.a;
+				var oldForm = model.form;
+				var _v4 = A2($author$project$Carte$update, carteMsg, model.carte);
+				var newCarte = _v4.a;
+				var carteCmd = _v4.b;
+				var _v5 = newCarte.clicked;
+				if (_v5.$ === 'Just') {
+					var coord = _v5.a;
+					return _Utils_Tuple2(
+						_Utils_update(
+							model,
+							{
+								carte: newCarte,
+								form: _Utils_update(
+									oldForm,
+									{
+										lat: A2($myrho$elm_round$Round$round, 6, coord.lat),
+										_long: A2($myrho$elm_round$Round$round, 6, coord.lon),
+										typeError: false,
+										validate: false
+									})
+							}),
+						A2($elm$core$Platform$Cmd$map, $author$project$Main$MapMsg, carteCmd));
+				} else {
+					return _Utils_Tuple2(
+						_Utils_update(
+							model,
+							{carte: newCarte}),
+						A2($elm$core$Platform$Cmd$map, $author$project$Main$MapMsg, carteCmd));
+				}
+			default:
+				var result = msg.a;
+				if (result.$ === 'Ok') {
+					var squares = result.a;
+					var zoomCmd = $author$project$Carte$autoView(_Utils_Tuple0);
+					var clearCmd = $author$project$Carte$clearSquares(_Utils_Tuple0);
+					var boundsList = A2(
+						$elm$core$List$map,
+						function (sq) {
+							return $author$project$Draw_square$computeBounds(
+								{centerLat: sq.centerLat, centerLng: sq.centerLng, size: sq.size});
+						},
+						squares);
+					var drawCmds = A2($elm$core$List$map, $author$project$Carte$drawSquare, boundsList);
+					return _Utils_Tuple2(
+						_Utils_update(
+							model,
+							{
+								status: 'Succès : ' + ($elm$core$String$fromInt(
+									$elm$core$List$length(squares)) + ' carrés.')
+							}),
+						$elm$core$Platform$Cmd$batch(
+							A2(
+								$elm$core$List$cons,
+								A2($elm$core$Platform$Cmd$map, $author$project$Main$MapMsg, clearCmd),
+								_Utils_ap(
+									A2(
+										$elm$core$List$map,
+										$elm$core$Platform$Cmd$map($author$project$Main$MapMsg),
+										drawCmds),
+									_List_fromArray(
+										[
+											A2($elm$core$Platform$Cmd$map, $author$project$Main$MapMsg, zoomCmd)
+										])))));
+				} else {
+					return _Utils_Tuple2(
+						_Utils_update(
+							model,
+							{status: 'Erreur serveur.'}),
+						$elm$core$Platform$Cmd$none);
+				}
 		}
 	});
 var $author$project$Main$FormMsg = function (a) {
@@ -6442,7 +6889,7 @@ var $author$project$Interface$inputContainerStyle = _List_fromArray(
 		A2($elm$html$Html$Attributes$style, 'background', 'white'),
 		A2($elm$html$Html$Attributes$style, 'padding', '20px'),
 		A2($elm$html$Html$Attributes$style, 'border-radius', '8px'),
-		A2($elm$html$Html$Attributes$style, 'box-shadow', '0 4px 6px rgba(0,0,0,0.1)'),
+		A2($elm$html$Html$Attributes$style, 'box-shadow', 'rgba(50, 50, 50, 0.3) 10px 10px 20px'),
 		A2($elm$html$Html$Attributes$style, 'width', '200px')
 	]);
 var $elm$virtual_dom$VirtualDom$Normal = function (a) {
@@ -6608,17 +7055,13 @@ var $author$project$Main$view = function (model) {
 				$elm$html$Html$map,
 				$author$project$Main$FormMsg,
 				$author$project$Interface$mainView(model.form)),
-				$author$project$Carte$view(model.carte)
+				A2(
+				$elm$html$Html$map,
+				$author$project$Main$MapMsg,
+				$author$project$Carte$view(model.carte))
 			]));
 };
 var $author$project$Main$main = $elm$browser$Browser$element(
-	{
-		init: $author$project$Main$init,
-		subscriptions: function (_v0) {
-			return $elm$core$Platform$Sub$none;
-		},
-		update: $author$project$Main$update,
-		view: $author$project$Main$view
-	});
+	{init: $author$project$Main$init, subscriptions: $author$project$Main$subscriptions, update: $author$project$Main$update, view: $author$project$Main$view});
 _Platform_export({'Main':{'init':$author$project$Main$main(
 	$elm$json$Json$Decode$succeed(_Utils_Tuple0))(0)}});}(this));

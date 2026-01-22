@@ -1,32 +1,45 @@
 module Main exposing (main)
 
 import Browser
-import Html exposing (Html, div, button, text, p)
-import Html.Events exposing (onClick)
+import Html exposing (Html, div)
 import Http
+
 import Carte
 import Draw_square
-import UserApi
 import Interface
+import UserApi
+import Round
+
+
 
 -- MODEL
 
 type alias Model =
     { carte : Carte.Model
-    , status : String
     , form : Interface.Model
+    , status : String
     }
+
+
+
+-- MSG
+
+type Msg
+    = FormMsg Interface.Msg
+    | MapMsg Carte.Msg
+    | GotSquares (Result Http.Error UserApi.ServerResponse)
+
 
 
 -- INIT
 
-init : () -> ( Model, Cmd Msg)
+init : () -> ( Model, Cmd Msg )
 init _ =
     let
         ( carteModel, carteCmd ) =
             Carte.init
 
-        initialForm = 
+        initialForm =
             { lat = ""
             , long = ""
             , d = ""
@@ -35,117 +48,220 @@ init _ =
             }
     in
     ( { carte = carteModel
-      , status = "Prêt à charger les carrés."
       , form = initialForm
+      , status = "Prêt."
       }
-    , carteCmd -- On initialise seulement la carte, pas de carrés au démarrage
+    , Cmd.map MapMsg carteCmd
     )
 
 
--- MSG
 
-type Msg
-    = FormMsg Interface.Msg
-    | GotSquares (Result Http.Error UserApi.ServerResponse)
-
-
--- 4. UPDATE
+-- UPDATE
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
-        -- Gestion des messages venant de l'Interface (champs texte, bouton valider)
-        FormMsg interfaceMsg ->
-            case interfaceMsg of
-                Interface.Lat val ->
-                    let oldForm = model.form
-                    in ({ model | form = { oldForm | lat = val, validate = False, typeError = False } }, Cmd.none)
 
-                Interface.Long val ->
-                    let oldForm = model.form
-                    in ({ model | form = { oldForm | long = val, validate = False, typeError = False } }, Cmd.none)
+        -- ============================
+        -- MESSAGES DE L'INTERFACE
+        -- ============================
+
+        FormMsg interfaceMsg ->
+            let
+                oldForm =
+                    model.form
+            in
+            case interfaceMsg of
+
+                Interface.Lat val -> -- mise à jour de latitude si message de l'interface
+                    ( { model
+                        | form =
+                            { oldForm
+                                | lat = val
+                                , validate = False
+                                , typeError = False
+                            }
+                      }
+                    , Cmd.none
+                    )
+
+                Interface.Long val -> -- mise à jour de longitude si message de l'interface
+                    ( { model
+                        | form =
+                            { oldForm
+                                | long = val
+                                , validate = False
+                                , typeError = False
+                            }
+                      }
+                    , Cmd.none
+                    )
 
                 Interface.Deniv val ->
-                    let oldForm = model.form
-                    in ({ model | form = { oldForm | d = val, validate = False, typeError = False } }, Cmd.none)
+                    ( { model
+                        | form =
+                            { oldForm
+                                | d = val
+                                , validate = False
+                                , typeError = False
+                            }
+                      }
+                    , Cmd.none
+                    )
 
                 Interface.Validate ->
-                    -- C'est ICI qu'on fait le lien entre l'Interface et l'API
                     let
-                        maybeLat = String.toFloat model.form.lat
-                        maybeLng = String.toFloat model.form.long
-                        maybeDeniv = String.toFloat model.form.d
+                        maybeLat =
+                            String.toFloat oldForm.lat
+
+                        maybeLon =
+                            String.toFloat oldForm.long
+
+                        maybeDeniv =
+                            String.toFloat oldForm.d
                     in
-                    case (maybeLat, maybeLng, maybeDeniv) of
-                        (Just lat, Just lng, Just deniv) ->
+                    case ( maybeLat, maybeLon, maybeDeniv ) of
+                        ( Just lat, Just lon, Just deniv ) ->
                             let
-                                -- Données valides : On prépare la requête
-                                apiData : UserApi.StartPointData
                                 apiData =
                                     { lat = lat
-                                    , lng = lng
+                                    , lng = lon
                                     , deniv = deniv
                                     }
-                                
-                                oldForm = model.form
-                                newForm = { oldForm | validate = True, typeError = False }
+
+                                -- 🔹 on déclenche la carte ICI
+                                ( newCarte, carteCmd ) =
+                                    Carte.update
+                                        (Carte.requestMarker -- on fait la requête de marqueur si on remplit des données dans l'interface
+                                            { lat = lat
+                                            , lon = lon
+                                            }
+                                        )
+                                        model.carte
                             in
-                            ( { model | status = "Chargement...", form = newForm }
-                            , UserApi.fetchSquares apiData GotSquares
+                            ( { model
+                                | carte = newCarte
+                                , status = "Calcul en cours..."
+                                , form =
+                                    { oldForm
+                                        | validate = True
+                                        , typeError = False
+                                    }
+                              }
+                            , Cmd.batch
+                                [ UserApi.fetchSquares apiData GotSquares
+                                , Cmd.map MapMsg carteCmd
+                                ]
                             )
 
                         _ ->
-                            -- Données invalides : On affiche l'erreur
-                            let
-                                oldForm = model.form
-                                newForm = { oldForm | validate = False, typeError = True }
-                            in
-                            ( { model | form = newForm, status = "Erreur de saisie." }
+                            ( { model
+                                | status = "Erreur de saisie"
+                                , form =
+                                    { oldForm | typeError = True }
+                              }
                             , Cmd.none
                             )
 
-        -- Gestion de la réponse du Serveur
+
+        -- ============================
+        -- MESSAGES DE LA CARTE
+        -- ============================
+
+        MapMsg carteMsg ->
+            let
+                ( newCarte, carteCmd ) =
+                    Carte.update carteMsg model.carte
+
+                oldForm =
+                    model.form
+            in
+            case newCarte.clicked of
+                Just coord ->
+                    ( { model
+                        | carte = newCarte
+                        , form =
+                            { oldForm
+                                | lat = Round.round 6 coord.lat -- on arrondi à 6 chiffres après la virgule les coordonnées cliquées
+                                , long = Round.round 6 coord.lon
+                                , validate = False
+                                , typeError = False
+                            }
+                      }
+                    , Cmd.map MapMsg carteCmd
+                    )
+
+                Nothing ->
+                    ( { model | carte = newCarte }
+                    , Cmd.map MapMsg carteCmd
+                    )
+
+
+        -- ============================
+        -- RÉPONSE DE L'API
+        -- ============================
+
         GotSquares result ->
             case result of
                 Ok squares ->
                     let
-                        -- Conversion des données (ton code original)
-                        toParams sq =
-                            { size = sq.size
-                            , centerLat = sq.centerLat
-                            , centerLng = sq.centerLng
-                            }
-
-                        boundsList =
-                            List.map (toParams >> Draw_square.computeBounds) squares
+                        boundsList = -- calcul des coordonnées des 4 sommets des carrées/rectangles
+                            List.map
+                                (\sq ->
+                                    Draw_square.computeBounds
+                                        { size = sq.size
+                                        , centerLat = sq.centerLat
+                                        , centerLng = sq.centerLng
+                                        }
+                                )
+                                squares
 
                         drawCmds =
-                            List.map Carte.drawSquare boundsList
+                            List.map Carte.drawSquare boundsList -- on envoie la commande pour tracer les carrés
 
-                        zoomCmd = Carte.autoView ()
-                        
-                        -- Ajout du nettoyage (optionnel si tu l'as implémenté)
-                        clearCmd = Carte.clearSquares ()
+                        clearCmd =
+                            Carte.clearSquares ()
+
+                        zoomCmd =
+                            Carte.autoView ()
                     in
-                    ( { model | status = "Succès : " ++ String.fromInt (List.length squares) ++ " carrés." }
-                    , Cmd.batch (clearCmd :: drawCmds ++ [ zoomCmd ])
+                    ( { model
+                        | status =
+                            "Succès : "
+                                ++ String.fromInt (List.length squares)
+                                ++ " carrés."
+                      }
+                    , Cmd.batch
+                        (Cmd.map MapMsg clearCmd
+                            :: List.map (Cmd.map MapMsg) drawCmds
+                            ++ [ Cmd.map MapMsg zoomCmd ]
+                        )
                     )
 
                 Err _ ->
-                    ( { model | status = "Erreur lors de la récupération des données." }
+                    ( { model | status = "Erreur serveur." }
                     , Cmd.none
                     )
 
 
--- 5. VIEW
+
+-- SUBSCRIPTIONS
+
+subscriptions : Model -> Sub Msg -- on écoute les évenements du fichier Carte.elm
+subscriptions model =
+    Sub.map MapMsg (Carte.subscriptions model.carte)
+
+
+
+-- VIEW
 
 view : Model -> Html Msg
 view model =
     div []
-        [ -- Affiche l'interface en convertissant ses messages (FormMsg)
-          Html.map FormMsg (Interface.mainView model.form)
-        , Carte.view model.carte
-        ]
+        [ Html.map FormMsg (Interface.mainView model.form)
+        , Html.map MapMsg (Carte.view model.carte)
+        ] -- ajout des balises HTML 
+
 
 
 -- MAIN
@@ -154,7 +270,7 @@ main : Program () Model Msg
 main =
     Browser.element
         { init = init
-        , view = view
         , update = update
-        , subscriptions = \_ -> Sub.none
+        , view = view
+        , subscriptions = subscriptions
         }
