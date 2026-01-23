@@ -30,6 +30,7 @@ go.work.sum
 .envrc
 
 db/
+*.prof
 
 # Editor/IDE
 # .idea/

@@ -1,44 +1,67 @@
 package tileutils
 
 import (
+	"math"
 	"sync"
 
 	"github.com/alietar/elp/go/gpsfiles"
 )
 
+// Nouvelle clé de cache : beaucoup plus efficace qu'une string
+type TileKey struct {
+	X float64
+	Y float64
+}
+
 type TileCache struct {
 	sync.Mutex
-	cache map[string]*Tile // String for the path
+	cache map[TileKey]*Tile
 }
 
 func NewTileCache() *TileCache {
 	return &TileCache{
-		cache: make(map[string]*Tile),
+		cache: make(map[TileKey]*Tile),
 	}
 }
-func (tc *TileCache) GetOrLoad(xLambert, yLambert float64, accuracy gpsfiles.MapAccuracy) (*Tile, int, int, string) {
-	// On détermine le chemin du fichier pour savoir si on l'a déjà
-	folderPath := "./db/" + string(accuracy) + "/"
-	path, _, _, _ := gpsfiles.GetFileForMyCoordinate(xLambert, yLambert, folderPath)
 
-	tc.Lock()
-	defer tc.Unlock()
-
-	// Si la tuile existe déjà dans le cache, on la renvoie
-	if tile, exists := tc.cache[path]; exists {
-		// On recalcule juste les indices locaux car ils dépendent du point d'entrée
-		x, y := LambertToIndices(tile.XLambertLL, tile.YLambertLL, xLambert, yLambert, tile.CellSize)
-		return tile, x, y, path
+func (tc *TileCache) GetOrLoad(xLambert, yLambert float64, accuracy gpsfiles.MapAccuracy) (*Tile, int, int) {
+	// 1. DÉTERMINER LA TAILLE RÉELLE DE LA TUILE (en mètres)
+	var cellSize float64
+	switch accuracy {
+	case gpsfiles.ACCURACY_1:
+		cellSize = 1
+	case gpsfiles.ACCURACY_5:
+		cellSize = 5
+	case gpsfiles.ACCURACY_25:
+		cellSize = 25
 	}
 
-	// Sinon, on crée la tuile (cette fonction doit être adaptée pour ne pas retourner un nouveau pointeur si on veut le faire proprement,
-	// mais ici on utilise ta fonction existante et on stocke le résultat)
+	tileSize := 1000.0 * cellSize // Ex: 25000m pour accuracy 25m
+
+	// 2. CALCUL MATHÉMATIQUE DE L'ORIGINE (Sans toucher au disque !)
+	// On arrondit à l'entier inférieur multiple de la taille de tuile
+	tileX := math.Floor((xLambert+cellSize/2)/tileSize)*tileSize - cellSize/2
+	tileY := math.Floor((yLambert-cellSize/2)/tileSize)*tileSize + cellSize/2
+
+	key := TileKey{X: tileX, Y: tileY}
+
+	// 3. CHECK CACHE (Opération purement RAM)
+	tc.Lock()
+	if tile, exists := tc.cache[key]; exists {
+		tc.Unlock()
+		// Calcul des indices locaux
+		x, y := LambertToIndices(tile.XLambertLL, tile.YLambertLL, xLambert, yLambert, tile.CellSize)
+		return tile, x, y
+	}
+
+	// Chargement réel
 	tile, x, y := NewTileFromLambert(xLambert, yLambert, accuracy)
 
-	// Si chargement réussi, on stocke dans le cache
 	if x != -1 && y != -1 {
-		tc.cache[path] = tile
+		// On stocke avec notre clé calculée
+		tc.cache[key] = tile
 	}
+	tc.Unlock()
 
-	return tile, x, y, path
+	return tile, x, y
 }

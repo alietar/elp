@@ -23,8 +23,8 @@ func ComputeTiles(startLongitude, startLatitude, d float64, accuracy gpsfiles.Ma
 
 	tileCache := NewTileCache()
 
-	adjacentTileCoordinatesChan := make(chan [2]float64, 1000)
-	doneTileMatricesChan := make(chan *Tile, 1000)
+	adjacentTileCoordinatesChan := make(chan [2]float64, 5000)
+	doneTileMatricesChan := make(chan *Tile, 5000)
 	var wg sync.WaitGroup
 
 	// Adding the first tile worker manually so the wait routine doesn't stop the program immediately
@@ -41,7 +41,7 @@ func ComputeTiles(startLongitude, startLatitude, d float64, accuracy gpsfiles.Ma
 		yLam := entryPointCoordinates[1]
 
 		// 1. Récupérer la tuile depuis le cache
-		tile, xStart, yStart, _ := tileCache.GetOrLoad(xLam, yLam, accuracy)
+		tile, xStart, yStart := tileCache.GetOrLoad(xLam, yLam, accuracy)
 
 		if xStart == -1 || yStart == -1 {
 			wg.Done()
