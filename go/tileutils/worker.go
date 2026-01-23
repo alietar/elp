@@ -23,8 +23,8 @@ func ComputeTiles(startLongitude, startLatitude, d float64, accuracy gpsfiles.Ma
 
 	tileCache := NewTileCache()
 
-	adjacentTileCoordinatesChan := make(chan [2]float64, 100)
-	doneTileMatricesChan := make(chan *Tile, 100)
+	adjacentTileCoordinatesChan := make(chan [2]float64, 1000)
+	doneTileMatricesChan := make(chan *Tile, 1000)
 	var wg sync.WaitGroup
 
 	// Adding the first tile worker manually so the wait routine doesn't stop the program immediately
@@ -36,23 +36,48 @@ func ComputeTiles(startLongitude, startLatitude, d float64, accuracy gpsfiles.Ma
 	// adjacentTileCoordinates when no tile algorithm are at work
 	go waitRoutine(&wg, adjacentTileCoordinatesChan, doneTileMatricesChan)
 
-	// The "for" will wait for new adjacentTile until the waitRoutine closes the channel
 	for entryPointCoordinates := range adjacentTileCoordinatesChan {
-		xLambert := entryPointCoordinates[0]
-		yLambert := entryPointCoordinates[1]
+		xLam := entryPointCoordinates[0]
+		yLam := entryPointCoordinates[1]
 
-		// path, _, _, _ := gpsfiles.GetFileForMyCoordinate(xLambert, yLambert, "./db/"+string(accuracy)+"/")
+		// 1. Récupérer la tuile depuis le cache
+		tile, xStart, yStart, _ := tileCache.GetOrLoad(xLam, yLam, accuracy)
 
-		// fmt.Printf("xLambert: %f, yLambert: %f\n", xLambert, yLambert)
+		if xStart == -1 || yStart == -1 {
+			wg.Done()
+			continue
+		}
 
-		startAlt = addTileWorker(
-			xLambert, yLambert, d, startAlt,
-			accuracy,
-			tileCache,
-			&wg,
-			doneTileMatricesChan,
-			adjacentTileCoordinatesChan,
-		)
+		// 2. VERROUILLAGE CRITIQUE
+		tile.Mutex.Lock()
+
+		// Init lazy de la matrice booléenne
+		if tile.PotentiallyReachable == nil {
+			if startAlt == -1 {
+				startAlt = tile.Altitudes[xStart][yStart]
+			}
+			tile.CreatePotentiallyReachable(d, startAlt)
+		}
+
+		// 3. LE TEST DE L'AMNÉSIE
+		// Si la case est déjà cochée, ON ARRÊTE TOUT DE SUITE.
+		// On ne lance pas de worker, on ne fait pas de wg.Add.
+		if tile.Reachable[xStart][yStart] {
+			tile.Mutex.Unlock()
+			wg.Done()
+			continue
+		}
+
+		// 4. LE MARQUAGE PRÉVENTIF (Atomic Set)
+		// On coche la case MAINTENANT pour que si un autre worker arrive
+		// une milliseconde plus tard, il voit que c'est pris.
+		tile.Reachable[xStart][yStart] = true
+
+		tile.Mutex.Unlock()
+
+		// 5. Lancement du worker
+		// Note: On passe 'tile' directement, plus besoin de recharger le fichier dedans
+		go FindNeighbors(tile, xStart, yStart, &wg, doneTileMatricesChan, adjacentTileCoordinatesChan)
 	}
 
 	uniqueTiles := make(map[*Tile]bool)
@@ -72,50 +97,33 @@ func ComputeTiles(startLongitude, startLatitude, d float64, accuracy gpsfiles.Ma
 	// return
 }
 
-func addTileWorker(
-	xLambert, yLambert, d, alt float64,
-	accuracy gpsfiles.MapAccuracy,
-	tc *TileCache,
-	wg *sync.WaitGroup,
+// Version ajustée de addTileWorker pour aller avec le code ci-dessus
+func addTileWorker(wg *sync.WaitGroup,
+	tile *Tile, // On passe la tuile directement
+	xStart, yStart int, // Et les indices calculés
+	d, alt float64,
 	results chan *Tile,
 	exploreAdj chan [2]float64,
 ) float64 {
 
-	tile, xStart, yStart, _ := tc.GetOrLoad(xLambert, yLambert, accuracy)
-
-	/////// !!!!! Use the same tile if the algo was already run on it
-	// tile, xStart, yStart := NewTileFromLambert(xLambert, yLambert, accuracy)
-
-	if xStart == -1 || yStart == -1 {
-		wg.Done()
-		return alt
-	}
-
-	//
-
+	// Init thread-safe de la tuile si nécessaire
 	tile.Mutex.Lock()
-	if tile.PotentiallyReachable == nil { // Null if it is a new tile
-		// Si alt == -1 (cas du tout premier point), on le set
+	if tile.PotentiallyReachable == nil {
 		if alt == -1 {
 			alt = tile.Altitudes[xStart][yStart]
-			fmt.Printf("Starting global altitude set to %f\n", alt)
 		}
 		tile.CreatePotentiallyReachable(d, alt)
 	}
-
-	// 3. VÉRIFICATION CRITIQUE : Est-ce qu'on est déjà passé par ce pixel précis ?
+	// Petite double sécurité (si un autre worker est passé entre le check du main et ici)
 	if tile.Reachable[xStart][yStart] {
-		// On a déjà exploré ce point précis via un autre chemin.
-		// On arrête là pour cette branche.
 		tile.Mutex.Unlock()
-		wg.Done()
 		return alt
 	}
-
-	fmt.Printf("New tile worker starting at: x=%f, y=%f\n", xLambert, yLambert)
-
 	tile.Mutex.Unlock()
 
+	// C'est SEULEMENT ICI qu'on incrémente le WaitGroup
+	wg.Add(1)
+	// On lance la version Itérative (non récursive)
 	go FindNeighbors(tile, xStart, yStart, wg, results, exploreAdj)
 
 	return alt
