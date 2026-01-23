@@ -14,3 +14,4 @@ export function draw_card(packet, cardsTypes) {
     return card;
 }
 
+export { draw_card };
