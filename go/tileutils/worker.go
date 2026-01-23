@@ -2,7 +2,6 @@ package tileutils
 
 import (
 	"fmt"
-	"math"
 	"sync"
 
 	"github.com/alietar/elp/go/gpsfiles"
@@ -22,8 +21,7 @@ func ComputeTiles(startLongitude, startLatitude, d float64, accuracy gpsfiles.Ma
 	fmt.Printf(" - WGS84 => longitude: %f, latitude: %f\n", startLongitude, startLatitude)
 	fmt.Printf(" - Lambert93 => xLambert: %f, yLambert: %f\n", xLambert, yLambert)
 
-	// General initalization
-	var exploredBorderPointsLambert [][2]float64
+	tileCache := NewTileCache()
 
 	adjacentTileCoordinatesChan := make(chan [2]float64, 100)
 	doneTileMatricesChan := make(chan *Tile, 100)
@@ -43,66 +41,80 @@ func ComputeTiles(startLongitude, startLatitude, d float64, accuracy gpsfiles.Ma
 		xLambert := entryPointCoordinates[0]
 		yLambert := entryPointCoordinates[1]
 
-		////// !!!! CHECK Explorated coordinates only for the same tile path
-		// Dont'go explore a tile if it was already explored starting from the same border point
-		skip := false
-		for _, point := range exploredBorderPointsLambert {
-			if math.Sqrt(math.Pow((point[0]-entryPointCoordinates[0]), 2)+math.Pow((point[1]-entryPointCoordinates[1]), 2)) < 1000 {
-				fmt.Printf("Tile already explored by this way\n")
+		// path, _, _, _ := gpsfiles.GetFileForMyCoordinate(xLambert, yLambert, "./db/"+string(accuracy)+"/")
 
-				skip = true
-				break
-			}
-		}
+		// fmt.Printf("xLambert: %f, yLambert: %f\n", xLambert, yLambert)
 
-		if skip {
-			wg.Done()
-			continue
-		}
-
-		/*if slices.Contains(exploredBorderPointsLambert, entryPointCoordinates) {
-			fmt.Printf("Tile already explored by this way\n")
-			wg.Done()
-
-			continue
-		}*/
-		fmt.Printf("xLambert: %f, yLambert: %f\n", xLambert, yLambert)
-
-		exploredBorderPointsLambert = append(exploredBorderPointsLambert, entryPointCoordinates)
-
-		startAlt = addTileWorker(&wg, xLambert, yLambert, d, startAlt, accuracy, doneTileMatricesChan, adjacentTileCoordinatesChan)
+		startAlt = addTileWorker(
+			xLambert, yLambert, d, startAlt,
+			accuracy,
+			tileCache,
+			&wg,
+			doneTileMatricesChan,
+			adjacentTileCoordinatesChan,
+		)
 	}
 
+	uniqueTiles := make(map[*Tile]bool)
 	for tile := range doneTileMatricesChan {
-		returnTiles = append(returnTiles, tile)
+		if !uniqueTiles[tile] {
+			returnTiles = append(returnTiles, tile)
+			uniqueTiles[tile] = true
+		}
 	}
 
 	return
+
+	// for tile := range doneTileMatricesChan {
+	// returnTiles = append(returnTiles, tile)
+	// }
+
+	// return
 }
 
-func addTileWorker(wg *sync.WaitGroup,
+func addTileWorker(
 	xLambert, yLambert, d, alt float64,
 	accuracy gpsfiles.MapAccuracy,
+	tc *TileCache,
+	wg *sync.WaitGroup,
 	results chan *Tile,
 	exploreAdj chan [2]float64,
 ) float64 {
-	fmt.Printf("New tile worker starting at: x=%f, y=%f\n", xLambert, yLambert)
+
+	tile, xStart, yStart, _ := tc.GetOrLoad(xLambert, yLambert, accuracy)
 
 	/////// !!!!! Use the same tile if the algo was already run on it
-	tile, xStart, yStart := NewTileFromLambert(xLambert, yLambert, accuracy)
+	// tile, xStart, yStart := NewTileFromLambert(xLambert, yLambert, accuracy)
 
 	if xStart == -1 || yStart == -1 {
 		wg.Done()
 		return alt
 	}
 
-	if alt == -1 {
-		alt = tile.Altitudes[xStart][yStart]
+	//
 
-		fmt.Printf("Starting at altitude %f\n", alt)
+	tile.Mutex.Lock()
+	if tile.PotentiallyReachable == nil { // Null if it is a new tile
+		// Si alt == -1 (cas du tout premier point), on le set
+		if alt == -1 {
+			alt = tile.Altitudes[xStart][yStart]
+			fmt.Printf("Starting global altitude set to %f\n", alt)
+		}
+		tile.CreatePotentiallyReachable(d, alt)
 	}
 
-	tile.CreatePotentiallyReachable(d, alt)
+	// 3. VÉRIFICATION CRITIQUE : Est-ce qu'on est déjà passé par ce pixel précis ?
+	if tile.Reachable[xStart][yStart] {
+		// On a déjà exploré ce point précis via un autre chemin.
+		// On arrête là pour cette branche.
+		tile.Mutex.Unlock()
+		wg.Done()
+		return alt
+	}
+
+	fmt.Printf("New tile worker starting at: x=%f, y=%f\n", xLambert, yLambert)
+
+	tile.Mutex.Unlock()
 
 	go FindNeighbors(tile, xStart, yStart, wg, results, exploreAdj)
 
