@@ -1,6 +1,4 @@
-import {packet, cardsTypes} from './game_init.js';
-
-function draw_card(packet, cardsTypes) {
+export function draw_card(packet, cardsTypes) {
 
     if (cardsTypes.length === 0) 
         return null;

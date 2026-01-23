@@ -26,7 +26,6 @@ packet.set('Flip Three', { type: 'action', quantity: 3 });
 packet.set('Freeze', { type: 'action', quantity: 3 });
 packet.set('Second Chance', { type: 'action', quantity: 3 });
 
-console.log(packet);
 
 export var cardsTypes = [
   '12', '11', '10', '9', '8', '7', '6', '5', '4', '3', '2', '1', '0',
