@@ -54,3 +54,5 @@ yarn-error.log*
 # OS (Optionnel mais conseillé)
 .DS_Store
 Thumbs.db
+
+*.pdf
