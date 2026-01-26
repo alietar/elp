@@ -1,6 +1,7 @@
 {
   "type": "module",
   "dependencies": {
-    "inquirer": "^13.2.1"
+    "inquirer": "^8.2.7",
+    "sleep": "^6.3.0"
   }
 }

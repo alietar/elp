@@ -23,27 +23,36 @@ class Game {
         if (!card) return null;
 
         if (this.isActionCard(card)) {
-            this.resolveAction(card, player);
-        } else {
-            player.addCard(card);
-            if (player.flip7) this.roundEnded = true;
+            return { card, type: 'action' };
         }
-        return card;
+
+        const addResult = player.addCard(card);
+        if (addResult === 'second_chance') {
+            return this.resolveDraw(player);
+        }
+        if (player.flip7) this.roundEnded = true;
+        return { card, type: 'normal' };
     }
 
-    resolveAction(card, currentPlayer) {
+    resolveAction(card, currentPlayer, targetPlayer) {
         if (!currentPlayer) return;
 
         if (card === 'Second Chance') {
-            currentPlayer.receiveSecondChance(this.players);
-            if (!this.roundEnded) {
-                this.resolveDraw(currentPlayer);
+            if (targetPlayer && targetPlayer !== currentPlayer) {
+                if (!targetPlayer.hasSecondChance()) {
+                    targetPlayer.receiveSecondChance([targetPlayer]);
+                } else {
+                    this.discardCard('Second Chance');
+                }
+            } else {
+                const target = currentPlayer;
+                target.receiveSecondChance(this.players);
             }
             return;
         }
 
         if (card === 'Freeze') {
-            const target = this.chooseTarget(currentPlayer);
+            const target = targetPlayer || this.chooseTarget(currentPlayer);
             if (target) {
                 target.addActionCard('Freeze');
                 target.frozen();
@@ -54,10 +63,10 @@ class Game {
         }
 
         if (card === 'Flip Three') {
-            const target = this.chooseTarget(currentPlayer);
+            const target = targetPlayer || this.chooseTarget(currentPlayer);
             if (target) {
                 target.addActionCard('Flip Three');
-                this.resolveFlipThree(target);
+                return this.resolveFlipThree(target);
             } else {
                 this.discardCard('Flip Three');
             }
@@ -71,25 +80,32 @@ class Game {
             const card = this.drawCard();
             if (!card) break;
 
+            const playerLabel = currentPlayer.name || `Player ${currentPlayer.player_nb}`;
+
+            console.log(`${playerLabel} draws (Flip Three):`, card);
+
             if (this.isActionCard(card)) {
-                pendingActions.push(card);
+                if (card === 'Second Chance') {
+                    currentPlayer.receiveSecondChance(this.players);
+                } else {
+                    pendingActions.push(card);
+                }
             } else {
                 currentPlayer.addCard(card);
                 if (currentPlayer.flip7) {
                     this.roundEnded = true;
-                    return;
                 }
             }
+
+            if (this.roundEnded) break;
         }
 
-        if (this.roundEnded) return;
+        if (this.roundEnded) return null;
 
-        for (const action of pendingActions) {
-            this.resolveAction(action, currentPlayer);
-        }
+        return { pendingActions };
     }
 
-    chooseTarget(currentPlayer) {
+    chooseTarget(currentPlayer) { // reecrire quand on aura fait l'interface et ca retournera le joueur
         const activePlayers = this.players.filter(p => p.state);
         if (activePlayers.length === 0) return currentPlayer;
         if (activePlayers.length === 1) return activePlayers[0];

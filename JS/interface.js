@@ -1,72 +1,118 @@
 import inquirer from 'inquirer';
-import { draw_card } from './draw.js';
-import { packet, cardsTypes } from './game_init.js';
+import sleep from 'sleep';
+const BG_GREY = "\x1b[47m";
+const FG_BLACK = "\x1b[30m";
+const RESET = "\x1b[0m";  
 
 class Interface {
-  constructor() {
-    this.playersNames = [];
+  async askPlayerCount() {
+    const config = await inquirer.prompt([
+      {
+        type: 'number',
+        name: 'playerCount',
+        message: 'How many players?',
+        default: 2,
+        validate: (value) => Number.isInteger(value) && value >= 2 ? true : 'Min 2 players',
+      },
+    ]);
+    return config.playerCount;
   }
 
-  async namePlayer() {
+  async askPlayerName(player) {
     const pseudo = await inquirer.prompt([
       {
         type: 'input',
         name: 'playerName',
-        message: "What's your name?",
+        message: `Player ${player.player_nb}, what's your name?`,
       },
     ]);
-
-    console.log('Hi', pseudo.playerName, ', welcome to the game!');
-    this.playersNames.push(pseudo.playerName);
+    console.log('Hi', pseudo.playerName, ', Welcome !');
+    return pseudo.playerName;
   }
 
-  async play() {
-    const play = await inquirer.prompt([
-      {
-        type: 'rawlist',
-        name: 'choice',
-        message: 'Chose your move :',
-        choices: ['Flip a card', 'Stop'],
-      },
-    ]);
+  async chooseTarget(currentPlayer, players) {
+    const targets = players
+      .filter(p => p.state && p !== currentPlayer)
+      .map(p => ({ name: p.name || `Player ${p.player_nb}`, value: p }));
 
-    if (play.choice === 'Flip a card') {
-      const card = draw_card(packet, cardsTypes);
-      console.log('You drew a', card);
-      if (packet.get(card).type === 'action' && card !== 'Second Chance') {
-        await this.action();
-      }
-    } else {
-      console.log('You won', '', 'points');
-    }
-  }
+    if (targets.length === 0) return currentPlayer;
 
-  async action() {
     const action = await inquirer.prompt([
       {
         type: 'rawlist',
         name: 'choice',
         message: 'You drew an action card, who do you want to target?',
-        choices: this.playersNames,
+        choices: targets,
       },
     ]);
 
-    if (action.choice === this.playersNames[0]) {
-      console.log('You chose', this.playersNames[0]);
-    } else if (action.choice === this.playersNames[1]) {
-      console.log('You chose', this.playersNames[1]);
-    } else {
-      console.log('');
+    return action.choice;
+  }
+
+  async chooseSecondChanceTarget(currentPlayer, players) {
+    const targets = players
+      .filter(p => p.state && p !== currentPlayer && !p.hasSecondChance())
+      .map(p => ({ name: p.name || `Player ${p.player_nb}`, value: p }));
+
+    if (targets.length === 0) return null;
+
+    const action = await inquirer.prompt([
+      {
+        type: 'rawlist',
+        name: 'choice',
+        message: 'You already have Second Chance. Who do you want to give it to?',
+        choices: targets,
+      },
+    ]);
+
+    return action.choice;
+  }
+
+  async askMove(player) {
+    const play = await inquirer.prompt([
+      {
+        type: 'rawlist',
+        name: 'choice',
+        message: `${player.name || `Player ${player.player_nb}`} - Choose your move:`,
+        choices: ['Flip a card', 'Watch my card', 'Stop'],
+      },
+    ]);
+
+    return play.choice;
+  }
+
+  async showHand(player) {
+    console.log('Numbers:', player.hand_number);
+    console.log('Bonus:', player.hand_bonus);
+    console.log('Actions:', player.hand_actions);
+  }
+
+  showDraw(player, card) {
+    console.log(`${player.name || `Player ${player.player_nb}`} drew:`, card);
+  }
+
+  showSeparator() {
+    console.log('');
+    console.log('---');
+    console.log('');
+  }
+
+  async showRoundSummary(players, scores) {
+    console.log(`${BG_GREY}${FG_BLACK}--- Résumé du tour ---${RESET}`);
+    for (const player of players) {
+      const total = scores.get(player.player_nb) || 0;
+      console.log(`${BG_GREY}${FG_BLACK}${player.name || `Player ${player.player_nb}`} : +${player.score} (total ${total})${RESET}`);
+      await sleep.sleep(1);
     }
   }
 
-  async start() {
-    await this.namePlayer();
-    await this.play();
+  showWinner(player, totalScore) {
+    console.log(`🏆 ${player.name || `Player ${player.player_nb}`} wins with ${totalScore} points!`);
+  }
+
+  async pause(seconds) {
+    await sleep.sleep(seconds);
   }
 }
-
-const ui = new Interface();
-await ui.start();
 
 export { Interface };

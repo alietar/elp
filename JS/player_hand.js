@@ -9,39 +9,30 @@ class Hand {
         this.state = true;
         this.score = 0;
         this.flip7 = false;
-        this.eliminated = false;
-        this.frozen_state = false;
-        this.stayed = false;
     }
 
     addCard(card) {
-    if (!this.state) return;
+    if (!this.state) return 'inactive';
 
     if (this.isCardNumber(card)) {
         if (this.hand_number.includes(card)) {
             if (this.useSecondChanceIfAvailable()) {
                 this.addToDeck(card);
-                return;
+                return 'second_chance';
             }
         }
         this.hand_number.push(card);
         if (this.checkForDuplicates()) {
             this.hand_number.pop();
             this.addToDeck(card);
-            return;
+            return 'duplicate';
         }
-        if (this.state) this.checkWin(); // on verifie qu'on a gagné 
-    } else {
-        this.hand_bonus.push(card);
-    }
+        if (this.state) this.checkWin(); // on verifie qu'on a gagné
+        return 'ok';
     }
 
-    showHand() {
-        console.log(`Main du joueur ${this.player_nb}:`, this.hand_number);
-    }
-
-    totalCards() {
-        return this.hand_number.length + this.hand_bonus.length + this.hand_actions.length;
+    this.hand_bonus.push(card);
+    return 'ok';
     }
 
     addActionCard(card) {
@@ -67,7 +58,7 @@ class Hand {
     }
 
     isCardNumber(card) {
-        return !isNaN(parseInt(card, 10));
+        return /^-?\d+$/.test(card);
     }
 
     checkForDuplicates() {
@@ -76,7 +67,6 @@ class Hand {
     if (unique.size !== this.hand_number.length) {
         this.state = false;
         this.score = 0;
-        this.eliminated = true;
         console.log(`Doublon détecté : Joueur ${this.player_nb} éliminé (score = 0)`);
         return true;
     }
@@ -136,15 +126,9 @@ class Hand {
         if (!this.state) return;
 
         this.state = false;
-        if (isFreeze) {
-            this.score = 0;
-            this.frozen_state = true;
-        } else {
-            const numberScore = this.pointInMyHand();
-            const bonusScore = this.pointInBonus();
-            this.score = (this.hasX2Bonus() ? numberScore * 2 : numberScore) + bonusScore;
-            this.stayed = true;
-        }
+        const numberScore = this.pointInMyHand();
+        const bonusScore = this.pointInBonus();
+        this.score = (this.hasX2Bonus() ? numberScore * 2 : numberScore) + bonusScore;
     }
 
     frozen() {
@@ -156,7 +140,6 @@ class Hand {
         if (cardData) {
             cardData.quantity += 1; // ajout dans la défausse de +1 à la carte action joué
         }
-        console.log(`🃏 Carte ${card} remise dans la pioche`);
     } 
 
     returnAllCardsToDeck() {
@@ -181,9 +164,6 @@ class Hand {
         this.state = true;
         this.score = 0;
         this.flip7 = false;
-        this.eliminated = false;
-        this.frozen_state = false;
-        this.stayed = false;
     }
 
 }
