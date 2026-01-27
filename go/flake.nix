@@ -4,7 +4,7 @@
     utils.url = "github:numtide/flake-utils";
   };
 
-  outputs = { self, nixpkgs, utils, ... }:
+  outputs = { self, nixpkgs, utils, lib, ... }:
     utils.lib.eachDefaultSystem (system:
       let
         pkgs = import nixpkgs { inherit system; };
@@ -14,7 +14,11 @@
           version = "0.0.1";
           src = ./.;
 
-          vendorHash = null; 
+          shellHook = ''
+            export GOFLAGS="-mod=readonly"
+          '';
+
+          vendorHash = lib.fakeHash; 
         };
       in
       {
