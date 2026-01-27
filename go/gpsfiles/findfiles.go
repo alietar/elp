@@ -44,7 +44,7 @@ func ConvertLambert93ToWgs84(x, y float64) (float64, float64, error) {
 	return point.Y, point.X, nil
 }
 
-func GetFileForMyCoordinate(x, y float64, folderPath string, accuracy string) (string, error, float64, float64) {
+func ComputeTilePathFromLambert(x, y float64, folderPath string, accuracy string) (string, error, float64, float64) {
 	path := folderPath
 
 	var cellSize float64
@@ -65,16 +65,17 @@ func GetFileForMyCoordinate(x, y float64, folderPath string, accuracy string) (s
 
 	path = fmt.Sprintf("%s%04.0f_%04.0f_MNT_LAMB93_IGN69.asc", path, fileX, fileY)
 
+	// Offsetting to get the right lower left coordinates
 	xll := fileX*1000 - cellSize/2
 	yll := (fileY-cellSize)*1000 + cellSize/2
 
-	// 4. Calcul des bornes
+	// Bounds math
 	xmin := xll
 	xmax := xll + 1000*cellSize
 	ymin := yll
 	ymax := yll + 1000*cellSize
 
-	// 5. Test d’appartenance
+	// Double checking if coordinates are in tile
 	if x >= xmin && x <= xmax && y >= ymin && y <= ymax {
 		return path, nil, xll, yll
 	}

@@ -16,7 +16,7 @@ func NewTileFromLambert(xLambert, yLambert float64, accuracy gpsfiles.MapAccurac
 	folderPath := TILE_FOLDER_PATH + string(accuracy) + "/"
 
 	// Getting the right file
-	path, er, xLambertLL, yLambertLL := gpsfiles.GetFileForMyCoordinate(xLambert, yLambert, folderPath, string(accuracy))
+	path, er, xLambertLL, yLambertLL := gpsfiles.ComputeTilePathFromLambert(xLambert, yLambert, folderPath, string(accuracy))
 
 	t.XLambertLL = xLambertLL
 	t.YLambertLL = yLambertLL
@@ -44,13 +44,6 @@ func NewTileFromLambert(xLambert, yLambert float64, accuracy gpsfiles.MapAccurac
 
 	fmt.Printf("x: %d, y: %d\n", x, y)
 	t.CreateMatrix(path)
-
-	// startAltitude := (*t.Altitudes)[x][y]
-	// startAltitude := 169.75
-
-	// t.CreatePotentiallyReachable(5, startAltitude)
-
-	// fmt.Printf("Start Altitude : %f\n", startAltitude)
 
 	return &t, x, y
 }

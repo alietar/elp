@@ -11,11 +11,14 @@ import (
 	"github.com/alietar/elp/go/tileutils"
 )
 
+const N_GOROUTINE = 1
+
 func Start() {
 	// Handler for the main page
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) { mainHandler(w, r) })
 	http.HandleFunc("/points", func(w http.ResponseWriter, r *http.Request) { pointsHandler(w, r) })
-	http.ListenAndServe(":8026", nil) // Starts the server
+	err := http.ListenAndServe(":8026", nil)
+	fmt.Println("%v", err)
 }
 
 func mainHandler(w http.ResponseWriter, r *http.Request) {
@@ -94,9 +97,10 @@ func pointsHandler(w http.ResponseWriter, r *http.Request) {
 
 	var squaresToShow []tileutils.Wgs84Square
 
-	tiles := tileutils.ComputeTiles(jsonData.Lng, jsonData.Lat, jsonData.Deniv, accuracy)
+	tiles := tileutils.ComputeTiles(jsonData.Lng, jsonData.Lat, jsonData.Deniv, accuracy, N_GOROUTINE)
 
 	if len(tiles) == 0 {
+		fmt.Println("Couldn't compute, probably invalid coordinates")
 		w.WriteHeader(http.StatusNotAcceptable)
 		w.Write([]byte("{\"error\": \"invalid coordinates\"}"))
 

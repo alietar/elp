@@ -6359,7 +6359,7 @@ var $author$project$UserApi$fetchSquares = F2(
 				body: $elm$http$Http$jsonBody(
 					$author$project$UserApi$encodeUser(data)),
 				expect: A2($elm$http$Http$expectJson, toMsg, $author$project$UserApi$responseDecoder),
-				url: 'https://reachable.lietar.net/points'
+				url: 'http://localhost:8026/points'
 			});
 	});
 var $elm$core$Platform$Cmd$none = $elm$core$Platform$Cmd$batch(_List_Nil);

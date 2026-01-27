@@ -27,42 +27,33 @@ func NewTileCache() *TileCache {
 }
 
 func (tc *TileCache) GetOrLoad(xLambert, yLambert float64, accuracy gpsfiles.MapAccuracy) (*Tile, int, int) {
-	// 1. DÉTERMINER LA TAILLE RÉELLE DE LA TUILE (en mètres)
-	var cellSize float64
-	switch accuracy {
-	case gpsfiles.ACCURACY_1:
-		cellSize = 1
-	case gpsfiles.ACCURACY_5:
-		cellSize = 5
-	case gpsfiles.ACCURACY_25:
-		cellSize = 25
-	}
+	cellSize := gpsfiles.ParseAccuracyFloat(accuracy)
+	tileSize := 1000.0 * cellSize
 
-	tileSize := 1000.0 * cellSize // Ex: 25000m pour accuracy 25m
-
-	// 2. CALCUL MATHÉMATIQUE DE L'ORIGINE (Sans toucher au disque !)
-	// On arrondit à l'entier inférieur multiple de la taille de tuile
 	tileX := math.Floor((xLambert+cellSize/2)/tileSize)*tileSize - cellSize/2
 	tileY := math.Floor((yLambert-cellSize/2)/tileSize)*tileSize + cellSize/2
 
 	key := TileKey{X: tileX, Y: tileY}
 
-	// 3. CHECK CACHE (Opération purement RAM)
 	tc.Lock()
+	// If tile already exists in cache, recover it
 	if tile, exists := tc.cache[key]; exists {
 		tc.Unlock()
-		// Calcul des indices locaux
+
 		x, y := LambertToIndices(tile.XLambertLL, tile.YLambertLL, xLambert, yLambert, tile.CellSize)
 		return tile, x, y
 	}
 
-	// Chargement réel
+	// If it doesn't exists, create it
 	tile, x, y := NewTileFromLambert(xLambert, yLambert, accuracy)
 
-	if x != -1 && y != -1 {
-		// On stocke avec notre clé calculée
-		tc.cache[key] = tile
+	// Return after an error before adding to cache
+	if x == -1 && y == -1 || tile.Altitudes == nil {
+		tc.Unlock()
+		return nil, -1, -1
 	}
+
+	tc.cache[key] = tile
 	tc.Unlock()
 
 	return tile, x, y

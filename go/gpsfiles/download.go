@@ -20,6 +20,19 @@ const (
 	ACCURACY_25 MapAccuracy = "25M"
 )
 
+func ParseAccuracyFloat(accuracy MapAccuracy) float64 {
+	switch accuracy {
+	case ACCURACY_1:
+		return 1
+	case ACCURACY_5:
+		return 5
+	case ACCURACY_25:
+		return 25
+	}
+
+	return -1
+}
+
 type Link struct {
 	Href string `xml:"href,attr"`
 	Type string `xml:"type,attr"`

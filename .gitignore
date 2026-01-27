@@ -31,6 +31,7 @@ go.work.sum
 
 db/
 *.prof
+perf/
 
 # Editor/IDE
 # .idea/
