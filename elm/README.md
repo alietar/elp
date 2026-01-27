@@ -23,9 +23,9 @@
 
 Pour notre projet, nous n'avons pas choisi un des sujets proposés, car nous voulions lier notre projet Go au projet ELM. En effet notre projet Go permet de calculer les points atteignables depuis des coordonnées fournies, en descendant ou en montant au maximum de plus ou moins x mètres. Nous voulions une visualisation graphique sur carte du résultat, d'où la complicité avec le projet ELM.
 Ainsi sur notre site il est possible de cliquer sur la carte ou de renseigner manuellement les coordonnées, puis de choisir un delta d'altitude maxium et une précision, et finalement d'appuyer sur le bouton de calcul. Les données sont envoyées avec une requête POST au serveur, qui les traite puis renvoie une liste de carrés. Le site décode la liste et affiche le résultat sur la carte.
+Le serveur go est hébergé sur une machine distante pour ne pas à avoir à le compiler et le lancer soi-même.
 
 # Architecture des fichiers
-
 
 ## map.js
 
@@ -55,7 +55,7 @@ Finalement le Main coordonne les différents modules et gère l'update de chacun
 
 ### Prérequis
 
-- **ELM** v1.25.5
+- **ELM**
 
 ### Installation
 
@@ -63,7 +63,6 @@ Finalement le Main coordonne les différents modules et gère l'update de chacun
 git clone https://github.com/alietar/elp.git
 cd elp/elm
 elm make src/Main.elm --output elm.js
-
 ```
 
 # Usage
