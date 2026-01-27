@@ -8,9 +8,8 @@ type Point struct {
 	x, y int
 }
 
-func FindNeighbors(t *Tile, startX, startY int, wg *sync.WaitGroup, results chan *Tile, exploreAdj chan [2]float64) {
+func FindNeighbors(t *Tile, startX, startY int, wg *sync.WaitGroup, exploreAdj chan [2]float64) {
 	defer wg.Done()
-	results <- t // On signale que cette tuile a été touchée
 
 	// Pile pour l'algo itératif
 	stack := make([]Point, 0, 1000)

@@ -7,7 +7,6 @@ import (
 	"github.com/alietar/elp/go/gpsfiles"
 )
 
-// startLongitude, startLatitude := *flag.String("long", "4.871928", "starting longitude"), *flag.String("lat", "45.7838052", "starting latitude")
 func ComputeTiles(startLongitude, startLatitude, d float64, accuracy gpsfiles.MapAccuracy) (returnTiles []*Tile) {
 	// Getting the Lambert coordinates
 	xLambert, yLambert, er := gpsfiles.ConvertWgs84ToLambert93(startLongitude, startLatitude)
@@ -24,7 +23,6 @@ func ComputeTiles(startLongitude, startLatitude, d float64, accuracy gpsfiles.Ma
 	tileCache := NewTileCache()
 
 	adjacentTileCoordinatesChan := make(chan [2]float64, 5000)
-	doneTileMatricesChan := make(chan *Tile, 5000)
 	var wg sync.WaitGroup
 
 	// Adding the first tile worker manually so the wait routine doesn't stop the program immediately
@@ -34,7 +32,7 @@ func ComputeTiles(startLongitude, startLatitude, d float64, accuracy gpsfiles.Ma
 
 	// This go routine stops the listenings for the channel
 	// adjacentTileCoordinates when no tile algorithm are at work
-	go waitRoutine(&wg, adjacentTileCoordinatesChan, doneTileMatricesChan)
+	go waitRoutine(&wg, adjacentTileCoordinatesChan)
 
 	for entryPointCoordinates := range adjacentTileCoordinatesChan {
 		xLam := entryPointCoordinates[0]
@@ -77,24 +75,10 @@ func ComputeTiles(startLongitude, startLatitude, d float64, accuracy gpsfiles.Ma
 
 		// 5. Lancement du worker
 		// Note: On passe 'tile' directement, plus besoin de recharger le fichier dedans
-		go FindNeighbors(tile, xStart, yStart, &wg, doneTileMatricesChan, adjacentTileCoordinatesChan)
+		go FindNeighbors(tile, xStart, yStart, &wg, adjacentTileCoordinatesChan)
 	}
 
-	uniqueTiles := make(map[*Tile]bool)
-	for tile := range doneTileMatricesChan {
-		if !uniqueTiles[tile] {
-			returnTiles = append(returnTiles, tile)
-			uniqueTiles[tile] = true
-		}
-	}
-
-	return
-
-	// for tile := range doneTileMatricesChan {
-	// returnTiles = append(returnTiles, tile)
-	// }
-
-	// return
+	return tileCache.GetValuesSlice()
 }
 
 // Version ajustée de addTileWorker pour aller avec le code ci-dessus
@@ -102,7 +86,6 @@ func addTileWorker(wg *sync.WaitGroup,
 	tile *Tile, // On passe la tuile directement
 	xStart, yStart int, // Et les indices calculés
 	d, alt float64,
-	results chan *Tile,
 	exploreAdj chan [2]float64,
 ) float64 {
 
@@ -124,15 +107,14 @@ func addTileWorker(wg *sync.WaitGroup,
 	// C'est SEULEMENT ICI qu'on incrémente le WaitGroup
 	wg.Add(1)
 	// On lance la version Itérative (non récursive)
-	go FindNeighbors(tile, xStart, yStart, wg, results, exploreAdj)
+	go FindNeighbors(tile, xStart, yStart, wg, exploreAdj)
 
 	return alt
 }
 
-func waitRoutine(wg *sync.WaitGroup, adjacentTileCoordinates chan [2]float64, results chan *Tile) {
+func waitRoutine(wg *sync.WaitGroup, adjacentTileCoordinates chan [2]float64) {
 	wg.Wait()
 	close(adjacentTileCoordinates)
-	close(results)
 
 	fmt.Println("All the tile workers finished")
 }

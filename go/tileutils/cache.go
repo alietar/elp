@@ -1,7 +1,9 @@
 package tileutils
 
 import (
+	"maps"
 	"math"
+	"slices"
 	"sync"
 
 	"github.com/alietar/elp/go/gpsfiles"
@@ -64,4 +66,8 @@ func (tc *TileCache) GetOrLoad(xLambert, yLambert float64, accuracy gpsfiles.Map
 	tc.Unlock()
 
 	return tile, x, y
+}
+
+func (tc *TileCache) GetValuesSlice() []*Tile {
+	return slices.Collect(maps.Values(tc.cache))
 }
