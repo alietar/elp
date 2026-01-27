@@ -45,7 +45,7 @@ Il s'agit de l'interface pour la saisie des coordonnées, du delta d'altitude et
 
 ## UserApi.elm
 
-Ce fichier définit les schéma de données pour les requêtes HTTP et gère l'envoie des coordonnées de départ.
+Ce fichier définit les schémas de données pour les requêtes HTTP et gère l'envoie des coordonnées de départ.
 
 ## Main.elm
 
