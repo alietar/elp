@@ -60,7 +60,17 @@ func pointsHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var jsonData JsonString
-	json.Unmarshal(body, &jsonData)
+	err := json.Unmarshal(body, &jsonData)
+
+	if err != nil {
+		fmt.Println("Error decoding json")
+		fmt.Println(err)
+
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte("{\"error\": \"bad json formatting\"}"))
+
+		return
+	}
 
 	// Accuracy verification
 	var accuracy gpsfiles.MapAccuracy
@@ -73,6 +83,7 @@ func pointsHandler(w http.ResponseWriter, r *http.Request) {
 	case 25:
 		accuracy = gpsfiles.ACCURACY_25
 	default:
+		fmt.Println("Missing accuracy")
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write([]byte("{\"error\": \"missing accuracy\"}"))
 

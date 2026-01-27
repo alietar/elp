@@ -1,5 +1,7 @@
 package tileutils
 
+import "sync"
+
 const TILE_FOLDER_PATH = "./db/"
 
 const MATRIX_SIZE = 1000
@@ -10,6 +12,8 @@ type Tile struct {
 	Lat        float64
 	Long       float64
 	CellSize   float64
+
+	Mutex sync.Mutex // For concurrent write on the matrix
 
 	Altitudes            *[MATRIX_SIZE][MATRIX_SIZE]float64
 	PotentiallyReachable *[MATRIX_SIZE][MATRIX_SIZE]bool

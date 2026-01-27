@@ -1,6 +1,8 @@
 package gpsfiles
 
 import (
+	"math"
+
 	lgo "github.com/yageek/lambertgo"
 
 	"bufio"
@@ -118,34 +120,39 @@ func ReadCoordinateLambert93File(fileName string) (float64, float64, float64, er
 	return 0, 0, 0, fmt.Errorf("header incomplete in %s", fileName)
 }
 
-func GetFileForMyCoordinate(x, y float64, folderPath string) (string, error, float64, float64) {
-	// 1. Liste des fichiers
-	files, err := GetFilesNameFolder(folderPath)
-	if err != nil {
-		return "", err, -1, -1
+func GetFileForMyCoordinate(x, y float64, folderPath string, accuracy string) (string, error, float64, float64) {
+	path := folderPath
+
+	var cellSize float64
+	switch accuracy {
+	case "1M":
+		cellSize = 1
+		path += "RGEALTI_FXX_"
+	case "5M":
+		path += "RGEALTI_FXX_"
+		cellSize = 5
+	case "25M":
+		path += "BDALTIV2_25M_FXX_"
+		cellSize = 25
 	}
 
-	// 2. Parcours des fichiers
-	for _, path := range files {
-		if !strings.HasSuffix(path, ".asc") {
-			continue
-		}
+	fileX := math.Floor((x+cellSize/2)/(cellSize*1000)) * cellSize
+	fileY := math.Floor((y-cellSize/2)/(cellSize*1000))*cellSize + cellSize
 
-		xll, yll, cellsize, err := ReadCoordinateLambert93File(path)
-		if err != nil {
-			continue
-		}
+	path = fmt.Sprintf("%s%04.0f_%04.0f_MNT_LAMB93_IGN69.asc", path, fileX, fileY)
 
-		// 4. Calcul des bornes
-		xmin := xll
-		xmax := xll + 1000*cellsize
-		ymin := yll
-		ymax := yll + 1000*cellsize
+	xll := fileX*1000 - cellSize/2
+	yll := (fileY-cellSize)*1000 + cellSize/2
 
-		// 5. Test d’appartenance
-		if x >= xmin && x <= xmax && y >= ymin && y <= ymax {
-			return path, nil, xll, yll
-		}
+	// 4. Calcul des bornes
+	xmin := xll
+	xmax := xll + 1000*cellSize
+	ymin := yll
+	ymax := yll + 1000*cellSize
+
+	// 5. Test d’appartenance
+	if x >= xmin && x <= xmax && y >= ymin && y <= ymax {
+		return path, nil, xll, yll
 	}
 
 	return "", fmt.Errorf("coordinate not found in any file"), -1, -1
