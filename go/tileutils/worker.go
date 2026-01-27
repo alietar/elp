@@ -20,74 +20,96 @@ func ComputeTiles(startLongitude, startLatitude, d float64, accuracy gpsfiles.Ma
 	fmt.Printf(" - WGS84 => longitude: %f, latitude: %f\n", startLongitude, startLatitude)
 	fmt.Printf(" - Lambert93 => xLambert: %f, yLambert: %f\n", xLambert, yLambert)
 
+	// Concurrent tools init
 	tileCache := NewTileCache()
-
-	adjacentTileCoordinatesChan := make(chan [2]float64, nWorker)
+	adjacentTileCoordinatesChan := make(chan [2]float64, 20000)
+	// adjacentTileCoordinatesChan := make(chan [2]float64, int(10000.0/float64(nWorker)))
 	var wg sync.WaitGroup
 
-	// Adding the first tile worker manually so the wait routine doesn't stop the program immediately
+	// Loading the first tile manually to find starting altitude
+	startTile, xStart, yStart := tileCache.GetOrLoad(xLambert, yLambert, accuracy)
+
+	// Did not find the tile, quitting
+	if xStart == -1 || yStart == -1 {
+		wg.Done()
+		return nil
+	}
+
+	startAlt := startTile.Altitudes[xStart][yStart]
+
 	wg.Add(1)
 	adjacentTileCoordinatesChan <- [2]float64{xLambert, yLambert}
-	startAlt := -1.0
+
+	for i := range nWorker {
+		fmt.Printf("Launching worker %d\n", i)
+		go tileWorker(&wg, tileCache, adjacentTileCoordinatesChan, d, startAlt, accuracy)
+	}
 
 	// This go routine stops the listenings for the channel
-	// adjacentTileCoordinates when no tile algorithm are at work
-	go waitRoutine(&wg, adjacentTileCoordinatesChan)
+	// adjacentTileCoordinates when no worker are at work
+	// Which then stops the workers
+	// go waitRoutine(&wg, adjacentTileCoordinatesChan)
 
-	for entryPointCoordinates := range adjacentTileCoordinatesChan {
-		xLambert := entryPointCoordinates[0]
-		yLambert := entryPointCoordinates[1]
+	wg.Wait()
+	close(adjacentTileCoordinatesChan)
 
-		startAlt = addTileWorker(&wg, tileCache, adjacentTileCoordinatesChan, xLambert, yLambert, d, startAlt, accuracy)
-	}
+	fmt.Println("All the tile workers finished")
 
 	return tileCache.GetValuesSlice()
 }
 
-func addTileWorker(wg *sync.WaitGroup,
+func tileWorker(wg *sync.WaitGroup,
 	tileCache *TileCache,
-	exploreAdj chan [2]float64,
+	exploreChannel chan [2]float64,
+	d, alt float64,
+	accuracy gpsfiles.MapAccuracy,
+) {
+	// fmt.Println("Hey I'm a worker")
+	for entryPointCoordinates := range exploreChannel {
+		// fmt.Println("Received coordinates")
+		xLambert := entryPointCoordinates[0]
+		yLambert := entryPointCoordinates[1]
+
+		workerComputeCoordinates(wg, tileCache, exploreChannel, xLambert, yLambert, d, alt, accuracy)
+	}
+}
+
+func workerComputeCoordinates(wg *sync.WaitGroup,
+	tileCache *TileCache,
+	exploreChannel chan [2]float64,
 	xLambert, yLambert, d, alt float64,
 	accuracy gpsfiles.MapAccuracy,
-) float64 {
+) (skipped bool) {
 	tile, xStart, yStart := tileCache.GetOrLoad(xLambert, yLambert, accuracy)
 
 	// Did not find the tile, skipping
 	if xStart == -1 || yStart == -1 {
 		wg.Done()
-		return alt
+		return true
 	}
 
 	tile.Mutex.Lock()
 
+	// Init matrices if new tile
 	if tile.PotentiallyReachable == nil {
-		if alt == -1 {
-			alt = tile.Altitudes[xStart][yStart]
-		}
-
 		tile.CreatePotentiallyReachable(d, alt)
 	}
 
+	// Skip if already reachable
 	if tile.Reachable[xStart][yStart] {
 		tile.Mutex.Unlock()
 		wg.Done()
-
-		return alt
+		return true
 	}
 
-	// Writing tile hear to prevent other goroutines from starting
+	// Writing tile here to prevent other goroutines from starting
 	tile.Reachable[xStart][yStart] = true
-
 	tile.Mutex.Unlock()
 
-	go FindNeighbors(tile, xStart, yStart, wg, exploreAdj)
+	FindNeighbors(tile, xStart, yStart, wg, exploreChannel)
 
-	return alt
+	return false
 }
 
 func waitRoutine(wg *sync.WaitGroup, adjacentTileCoordinates chan [2]float64) {
-	wg.Wait()
-	close(adjacentTileCoordinates)
-
-	fmt.Println("All the tile workers finished")
 }
