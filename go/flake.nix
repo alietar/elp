@@ -18,7 +18,7 @@
             export GOFLAGS="-mod=readonly"
           '';
 
-          vendorHash = lib.fakeHash; 
+          vendorHash = "sha256-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=";
         };
       in
       {
