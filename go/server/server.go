@@ -15,7 +15,7 @@ func Start() {
 	// Handler for the main page
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) { mainHandler(w, r) })
 	http.HandleFunc("/points", func(w http.ResponseWriter, r *http.Request) { pointsHandler(w, r) })
-	http.ListenAndServe(":8080", nil) // Starts the server
+	http.ListenAndServe(":8026", nil) // Starts the server
 }
 
 func mainHandler(w http.ResponseWriter, r *http.Request) {
