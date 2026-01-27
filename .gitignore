@@ -30,6 +30,7 @@ go.work.sum
 .envrc
 
 db/
+*.prof
 
 # Editor/IDE
 # .idea/
@@ -54,3 +55,5 @@ yarn-error.log*
 # OS (Optionnel mais conseillé)
 .DS_Store
 Thumbs.db
+
+*.pdf

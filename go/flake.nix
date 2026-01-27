@@ -9,7 +9,7 @@
   in
   {
     devShells.${system}.default = pkgs.mkShell {
-      buildInputs = with pkgs; [ go gopls gotools go-tools _7zz ];
+      buildInputs = with pkgs; [ go gopls gotools go-tools _7zz graphviz ];
     };
   };
 }

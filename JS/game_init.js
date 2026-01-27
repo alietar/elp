@@ -21,16 +21,22 @@ packet.set('+4', { type: 'modifier', quantity: 1 });
 packet.set('+6', { type: 'modifier', quantity: 1 });
 packet.set('+8', { type: 'modifier', quantity: 1 });
 packet.set('+10', { type: 'modifier', quantity: 1 });
+packet.set('x2', { type: 'modifier', quantity: 1 });
 
 packet.set('Flip Three', { type: 'action', quantity: 3 });
 packet.set('Freeze', { type: 'action', quantity: 3 });
 packet.set('Second Chance', { type: 'action', quantity: 3 });
 
 
+
+// création de la défausse
+export var defausse = new Map();
+for (const [key, value] of packet.entries()) {
+  defausse.set(key, { type: value.type, quantity: 0 });
+}
+
 export var cardsTypes = [
   '12', '11', '10', '9', '8', '7', '6', '5', '4', '3', '2', '1', '0',
-  '+2', '+4', '+6', '+8', '+10',
+  '+2', '+4', '+6', '+8', '+10', 'x2',
   'Flip Three', 'Freeze', 'Second Chance'
 ];
-
-

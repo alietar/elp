@@ -3,29 +3,47 @@ package main
 import (
 	"flag"
 	"fmt"
+	"log"
 	"os"
+	"runtime/pprof"
 	"strconv"
 
 	"github.com/alietar/elp/go/gpsfiles"
 	"github.com/alietar/elp/go/server"
+	"github.com/alietar/elp/go/tileutils"
 )
 
 func main() {
-	fmt.Println("\n        _,--',   _._.--._____")
-	fmt.Println(" .--.--';_'-.', \";_      _.,-'")
-	fmt.Println(".'--'.  _.'    {`'-;_ .-.>.'")
-	fmt.Println("      '-:_      )  / `' '=.")
-	fmt.Println("        ) >     {_/,     /~)")
-	fmt.Println("        |/               `^ .'")
+	perfFlagPtr := flag.Bool("perf", false, "Doing perf tests")
 
-	fmt.Println("\n\033[34m --- FIND REACHABLE ---\033[0m\n")
+	flag.Parse()
 
-	dlAll, dlSome, accuracy := flagHandler()
+	if *perfFlagPtr {
+		f, err := os.Create("cpu.prof")
+		if err != nil {
+			log.Fatal(err)
+		}
+		pprof.StartCPUProfile(f)
+		defer pprof.StopCPUProfile()
 
-	downloadDepartments(dlAll, dlSome, accuracy)
+		tileutils.ComputeTiles(4.871928, 45.7838052, 0.3, gpsfiles.ACCURACY_1)
+	} else {
+		fmt.Println("\n        _,--',   _._.--._____")
+		fmt.Println(" .--.--';_'-.', \";_      _.,-'")
+		fmt.Println(".'--'.  _.'    {`'-;_ .-.>.'")
+		fmt.Println("      '-:_      )  / `' '=.")
+		fmt.Println("        ) >     {_/,     /~)")
+		fmt.Println("        |/               `^ .'")
 
-	fmt.Println("\n\033[34m -> Starting the server\033[0m\n")
-	server.Start()
+		fmt.Println("\n\033[34m --- FIND REACHABLE ---\033[0m\n")
+
+		dlAll, dlSome, accuracy := flagHandler()
+
+		downloadDepartments(dlAll, dlSome, accuracy)
+
+		fmt.Println("\n\033[34m -> Starting the server\033[0m\n")
+		server.Start()
+	}
 }
 
 func isThereDBFolder() bool {
