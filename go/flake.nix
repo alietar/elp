@@ -12,7 +12,7 @@
         myGoApp = pkgs.buildGoModule {
           pname = "go-reachable";
           version = "0.0.1";
-          src = ./.;
+          src = ./go/.;
 
           shellHook = ''
             export GOFLAGS="-mod=readonly"
