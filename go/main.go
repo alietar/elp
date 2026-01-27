@@ -18,7 +18,7 @@ func main() {
 	dlAll, dlSome, accuracy, perfMode := flagHandler()
 
 	if perfMode {
-		for i := range 10 {
+		for i := range 7 {
 			path := fmt.Sprintf("perf/test_%d.prof", i)
 			f, err := os.Create(path)
 			if err != nil {
@@ -30,11 +30,11 @@ func main() {
 			// tileutils.ComputeTiles(4.871928, 45.7838052, 0.3, gpsfiles.ACCURACY_1)
 			nWorker := int(math.Pow(2, float64(i)))
 			fmt.Printf("\n\nnWorker: %d\n", nWorker)
-			for j := range 1 {
+			for j := range 3 {
 				fmt.Println(j)
-				// tileutils.ComputeTiles(4.979897, 45.784764, 2, gpsfiles.ACCURACY_1, nWorker) // Le grand large
+				tileutils.ComputeTiles(4.979897, 45.784764, 2, gpsfiles.ACCURACY_1, nWorker) // Le grand large
 				// tileutils.ComputeTiles(4.636917, 45.779077, 2, gpsfiles.ACCURACY_1, nWorker) // Dans la montagne
-				tileutils.ComputeTiles(4.871492, 45.763811, 3, gpsfiles.ACCURACY_1, nWorker) // En ville
+				// tileutils.ComputeTiles(4.871492, 45.763811, 3, gpsfiles.ACCURACY_1, nWorker) // En ville
 			}
 
 			pprof.StopCPUProfile()

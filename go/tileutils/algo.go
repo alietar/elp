@@ -13,9 +13,9 @@ type Point struct {
 }
 
 func FindNeighbors(t *Tile, startX, startY int, wg *sync.WaitGroup, exploreAdj chan [2]float64) {
-	fmt.Printf("Starting %d x: %d, y: %d\n", GetGoid(), startX, startY)
+	// fmt.Printf("Starting %d x: %d, y: %d\n", GetGoid(), startX, startY)
 	defer wg.Done()
-	defer fmt.Printf("Finished %d\n", GetGoid())
+	// defer fmt.Printf("Finished %d\n", GetGoid())
 
 	stack := make([]Point, 0, 1000)
 
