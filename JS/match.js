@@ -15,6 +15,7 @@ class Match {
     }
 
     initPlayers() {
+        // Initialise les joueurs et leurs scores.
         for (let i = 1; i <= this.playerCount; i += 1) {
             const player = new Hand(i);
             this.players.push(player);
@@ -24,6 +25,7 @@ class Match {
     }
 
     startRound() {
+        // Nouvelle manche : reset des joueurs et du flag de fin de manche.
         this.game.roundEnded = false;
         for (const player of this.players) {
             player.resetForNewRound();
@@ -31,6 +33,7 @@ class Match {
     }
 
     endRound() {
+        // Termine la manche et cumule les scores.
         for (const player of this.players) {
             if (player.state) {
                 player.endGame(false);
@@ -63,9 +66,11 @@ class Match {
         if (action === 'flip') {
             const result = this.game.resolveDraw(player);
             if (result && result.type === 'action') {
+                // Second Chance : si le joueur en a déjà une, il doit choisir un autre joueur.
                 if (result.card === 'Second Chance' && player.hasSecondChance()) {
                     return { ...result, needsTarget: true, secondChanceTarget: true };
                 }
+                // Autres actions : si aucune cible fournie, on la demandera à l'UI.
                 if (result.card !== 'Second Chance' && !targetPlayer) {
                     return { ...result, needsTarget: true };
                 }
@@ -84,27 +89,33 @@ class Match {
     }
 
     async resolveAction(card, currentPlayer, targetPlayer) {
+        // Pour Second Chance, on demande la cible si nécessaire.
         if (card === 'Second Chance' && currentPlayer.hasSecondChance() && !targetPlayer) {
             targetPlayer = await this.ui.chooseSecondChanceTarget(currentPlayer, this.players);
         }
         const result = this.game.resolveAction(card, currentPlayer, targetPlayer);
-        if (result && result.pendingActions && result.pendingActions.length > 0 && !this.game.roundEnded) {
-            for (const action of result.pendingActions) {
-                if (action === 'Second Chance') {
-                    const target = currentPlayer.hasSecondChance()
-                        ? await this.ui.chooseSecondChanceTarget(currentPlayer, this.players)
-                        : null;
-                    await this.resolveAction(action, currentPlayer, target);
-                } else {
-                    const target = await this.ui.chooseTarget(currentPlayer, this.players);
-                    await this.resolveAction(action, currentPlayer, target);
-                }
+        // Si un Flip Three a généré des actions, on les résout après les 3 cartes.
+        if (!result || !result.pendingActions || result.pendingActions.length === 0) return result;
+        if (this.game.roundEnded) return result;
+
+        // actionOwner = joueur qui a tiré les actions via Flip Three.
+        const actionOwner = result.actionOwner || currentPlayer;
+        for (const action of result.pendingActions) {
+            if (action === 'Second Chance') {
+                const target = actionOwner.hasSecondChance()
+                    ? await this.ui.chooseSecondChanceTarget(actionOwner, this.players)
+                    : null;
+                await this.resolveAction(action, actionOwner, target);
+            } else {
+                const target = await this.ui.chooseTarget(actionOwner, this.players);
+                await this.resolveAction(action, actionOwner, target);
             }
         }
         return result;
     }
 
     playerStay(player) {
+        // Le joueur choisit "Stop".
         if (!player || !player.state) return;
         player.endGame(false);
     }
@@ -114,6 +125,7 @@ class Match {
     }
 
     checkGameOver() {
+        // La partie se termine quand un joueur atteint le score cible.
         for (const total of this.scores.values()) {
             if (total >= this.targetScore) {
                 this.gameOver = true;
@@ -135,6 +147,7 @@ class Match {
     async startGame() {
         if (!this.ui) throw new Error('UI is required to start the game.');
 
+        // Récupère les pseudos.
         for (const player of this.players) {
             player.name = await this.ui.askPlayerName(player);
         }

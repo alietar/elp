@@ -1,11 +1,14 @@
 import inquirer from 'inquirer';
 import sleep from 'sleep';
+
+// Couleurs simples pour l'affichage console.
 const BG_GREY = "\x1b[47m";
 const FG_BLACK = "\x1b[30m";
 const RESET = "\x1b[0m";  
 
 class Interface {
   async askPlayerCount() {
+    // Demande le nombre de joueurs (min 2).
     const config = await inquirer.prompt([
       {
         type: 'number',
@@ -19,6 +22,7 @@ class Interface {
   }
 
   async askPlayerName(player) {
+    // Saisie du pseudo.
     const pseudo = await inquirer.prompt([
       {
         type: 'input',
@@ -31,8 +35,9 @@ class Interface {
   }
 
   async chooseTarget(currentPlayer, players) {
+    // IMPORTANT : la cible peut être n'importe quel joueur actif, y compris soi-même.
     const targets = players
-      .filter(p => p.state && p !== currentPlayer)
+      .filter(p => p.state)
       .map(p => ({ name: p.name || `Player ${p.player_nb}`, value: p }));
 
     if (targets.length === 0) return currentPlayer;
@@ -50,6 +55,7 @@ class Interface {
   }
 
   async chooseSecondChanceTarget(currentPlayer, players) {
+    // On ne peut donner Second Chance qu'à un autre joueur actif qui ne l'a pas déjà.
     const targets = players
       .filter(p => p.state && p !== currentPlayer && !p.hasSecondChance())
       .map(p => ({ name: p.name || `Player ${p.player_nb}`, value: p }));
@@ -69,6 +75,7 @@ class Interface {
   }
 
   async askMove(player) {
+    // Choix du tour : piocher, regarder sa main, ou s'arrêter.
     const play = await inquirer.prompt([
       {
         type: 'rawlist',
@@ -92,12 +99,14 @@ class Interface {
   }
 
   showSeparator() {
+    // Séparateur visuel entre les tours.
     console.log('');
     console.log('---');
     console.log('');
   }
 
   async showRoundSummary(players, scores) {
+    // Résumé de fin de manche.
     console.log(`${BG_GREY}${FG_BLACK}--- Résumé du tour ---${RESET}`);
     for (const player of players) {
       const total = scores.get(player.player_nb) || 0;
