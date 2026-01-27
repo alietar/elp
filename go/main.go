@@ -14,11 +14,9 @@ import (
 )
 
 func main() {
-	perfFlagPtr := flag.Bool("perf", false, "Doing perf tests")
+	dlAll, dlSome, accuracy, perfMode := flagHandler()
 
-	flag.Parse()
-
-	if *perfFlagPtr {
+	if perfMode {
 		f, err := os.Create("cpu.prof")
 		if err != nil {
 			log.Fatal(err)
@@ -37,8 +35,6 @@ func main() {
 
 		fmt.Println("\n\033[34m --- FIND REACHABLE ---\033[0m\n")
 
-		dlAll, dlSome, accuracy := flagHandler()
-
 		downloadDepartments(dlAll, dlSome, accuracy)
 
 		fmt.Println("\n\033[34m -> Starting the server\033[0m\n")
@@ -54,14 +50,19 @@ func isThereDBFolder() bool {
 	}
 }
 
-func flagHandler() (bool, bool, gpsfiles.MapAccuracy) {
+func flagHandler() (bool, bool, gpsfiles.MapAccuracy, bool) {
 	downloadAllFlagPtr := flag.Bool("dl-all", false, "Downloads all the db")
 	downloadSomeFlagPtr := flag.Bool("dl-some", false, "Downloads only the provided departement. Put them after all the flags!")
 	accuracy1FlagPtr := flag.Bool("accuracy-1", false, "1M Accuracy")
 	accuracy5FlagPtr := flag.Bool("accuracy-5", false, "5M Accuracy")
 	accuracy25FlagPtr := flag.Bool("accuracy-25", false, "25M Accuracy")
+	perfFlagPtr := flag.Bool("perf", false, "Doing perf tests")
 
 	flag.Parse()
+
+	if *perfFlagPtr {
+		return false, false, gpsfiles.ACCURACY_25, true
+	}
 
 	if *downloadAllFlagPtr && *downloadSomeFlagPtr {
 		fmt.Println("You can't download all departements and some at the same time.")
@@ -70,7 +71,7 @@ func flagHandler() (bool, bool, gpsfiles.MapAccuracy) {
 	}
 
 	if !*downloadAllFlagPtr && !*downloadSomeFlagPtr && !isThereDBFolder() {
-		fmt.Println("No DB folder found, please download the DB with the -dl-all or -dl-some, and -dl-accuracy flag")
+		fmt.Println("No DB folder found, please download the DB with the -dl-all or -dl-some, and an accuracy flag")
 		os.Exit(3)
 	}
 
@@ -100,7 +101,7 @@ func flagHandler() (bool, bool, gpsfiles.MapAccuracy) {
 		}
 	}
 
-	return *downloadAllFlagPtr, *downloadSomeFlagPtr, accuracy
+	return *downloadAllFlagPtr, *downloadSomeFlagPtr, accuracy, false
 }
 
 func downloadDepartments(dlAll, dlSome bool, accuracy gpsfiles.MapAccuracy) {
