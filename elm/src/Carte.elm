@@ -93,7 +93,7 @@ update msg model =
                 Err _ ->
                     ( model, Cmd.none )
 
-        -- 🔹 demande venant de Main (Interface → Carte) pour récupérer les corrdonnées du point cliqué
+        -- demande venant de Main (Interface → Carte) pour récupérer les corrdonnées du point cliqué
         RequestMarker coord ->
             ( { model | clicked = Just coord }
             , addMarker
