@@ -1,12 +1,41 @@
 import inquirer from 'inquirer';
-import sleep from 'sleep';
+import colors from 'colors';
+import { packet } from './game_init.js';
 
 // Couleurs simples pour l'affichage console.
 const BG_GREY = "\x1b[47m";
 const FG_BLACK = "\x1b[30m";
 const RESET = "\x1b[0m";  
 
+
 class Interface {
+  
+  getColoredCard(cardName) { // mettre les numéros en couleur comme dans le jeu
+
+    const cardData = packet.get(cardName);
+    if (!cardData) return cardName;
+
+    switch (cardData.type) {
+      case 'number':
+        if (cardName == '0' || cardName === '3' || cardName === '6' || cardName === '7') return colors.magenta(cardName);
+        else if (cardName === '1' || cardName === '12' ) return colors.grey(cardName);
+        else if (cardName === '2' || cardName === '5' || cardName === '8') return colors.green(cardName);
+        else if (cardName === '4' || cardName === '11') return colors.blue(cardName);
+        else if (cardName === '9') return colors.yellow(cardName);
+        else return colors.red(cardName);
+      
+      case 'modifier':
+        return colors.yellow.bold(cardName);
+      
+      case 'action':
+        return colors.red.bold(cardName);
+      
+      default:
+        return cardName;
+    }
+  }
+
+
   async askPlayerCount() {
     // Demande le nombre de joueurs (min 2).
     const config = await inquirer.prompt([
@@ -89,13 +118,17 @@ class Interface {
   }
 
   async showHand(player) {
-    console.log('Numbers:', player.hand_number);
-    console.log('Bonus:', player.hand_bonus);
-    console.log('Actions:', player.hand_actions);
+    const numbers = player.hand_number.map(c => this.getColoredCard(c)).join(', ');
+    const bonus = player.hand_bonus.map(c => this.getColoredCard(c)).join(', ');
+    const actions = player.hand_actions.map(c => this.getColoredCard(c)).join(', ');
+
+    console.log('Numbers:', numbers);
+    console.log('Bonus:', bonus);
+    console.log('Actions:', actions);
   }
 
   showDraw(player, card) {
-    console.log(`${player.name || `Player ${player.player_nb}`} drew:`, card);
+    console.log(`${player.name || `Player ${player.player_nb}`} drew:`, this.getColoredCard(card));
   }
 
   showSeparator() {
@@ -111,7 +144,7 @@ class Interface {
     for (const player of players) {
       const total = scores.get(player.player_nb) || 0;
       console.log(`${BG_GREY}${FG_BLACK}${player.name || `Player ${player.player_nb}`} : +${player.score} (total ${total})${RESET}`);
-      await sleep.sleep(1);
+      await this.pause(1);   
     }
   }
 
@@ -120,7 +153,7 @@ class Interface {
   }
 
   async pause(seconds) {
-    await sleep.sleep(seconds);
+    return new Promise(resolve => setTimeout(resolve, seconds * 1000));
   }
 }
 
