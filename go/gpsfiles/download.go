@@ -9,6 +9,7 @@ import (
 	"os"
 	"os/exec"
 	"path"
+	"path/filepath"
 	"strings"
 )
 
@@ -146,6 +147,29 @@ func unzip(zipPath string, outputFolder string) {
 	fmt.Println(" | \033[32mExtraction finished\033[0m")
 }
 
+func removeDepartNb(accuracy MapAccuracy) {
+	folder := "./db/" + string(accuracy)
+
+	list, err := os.ReadDir(folder)
+	if err != nil {
+		panic(err)
+	}
+
+	for _, file := range list {
+		name := file.Name()
+		i := strings.Index(name, "_MNT_LAMB93_IGN")
+		j := strings.Index(name, "_FXX_")
+
+		if i == -1 || j == -1 {
+			continue
+		}
+
+		newName := string(accuracy) + "_" + name[j+5:i] + ".asc"
+
+		os.Rename(filepath.Join(folder, name), filepath.Join(folder, newName))
+	}
+}
+
 func DownloadUnzipDepartment(nb int, accuracy MapAccuracy) {
 	fmt.Printf("Starting download procedure for department n°\033[1m%02d\033[0m at \033[1m%s\033[0m\n", nb, string(accuracy))
 
@@ -184,18 +208,26 @@ func DownloadUnzipDepartment(nb int, accuracy MapAccuracy) {
 		log.Fatal("No ressources available for this accuracy")
 	}
 
+	if len(downloadURLs) > 1 {
+		log.Fatal("Need to download more than one file because the data is more than 4Go, feature unsupported")
+	}
+
+	url := downloadURLs[0]
+
 	err := os.MkdirAll("db", 0755) // Assure que le dossier "bd" existe (le crée si nécessaire) ; err est nil si le dossier est prêt
 
 	if err != nil {
 		log.Fatalf("Error while creating the DB folder: %v", err)
 	}
 
-	for _, url := range downloadURLs {
-		filename := path.Base(url)
-		downloadFromURL(url, filename)
-		unzip(filename, "./db/"+string(accuracy))
-		// unzip(filename, "./db/"+string(accuracy)+"/"+strconv.Itoa(nb))
-	}
+	filename := path.Base(url)
+	fmt.Println(filename)
+	fmt.Println(url)
+	downloadFromURL(url, filename)
+	unzip(filename, "./db/"+string(accuracy))
+
+	// Removing departement number in file name
+	removeDepartNb(accuracy)
 }
 
 func DownloadAllDepartements(accuracy MapAccuracy) {

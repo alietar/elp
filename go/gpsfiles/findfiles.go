@@ -44,26 +44,13 @@ func ConvertLambert93ToWgs84(x, y float64) (float64, float64, error) {
 	return point.Y, point.X, nil
 }
 
-func ComputeTilePathFromLambert(x, y float64, folderPath string, accuracy string) (string, error, float64, float64) {
-	path := folderPath
-
-	var cellSize float64
-	switch accuracy {
-	case "1M":
-		cellSize = 1
-		path += "RGEALTI_FXX_"
-	case "5M":
-		path += "RGEALTI_FXX_"
-		cellSize = 5
-	case "25M":
-		path += "BDALTIV2_25M_FXX_"
-		cellSize = 25
-	}
+func ComputeTilePathFromLambert(x, y float64, path string, accuracy string) (string, error, float64, float64) {
+	cellSize := ParseAccuracyFloat(MapAccuracy(accuracy))
 
 	fileX := math.Floor((x+cellSize/2)/(cellSize*1000)) * cellSize
 	fileY := math.Floor((y-cellSize/2)/(cellSize*1000))*cellSize + cellSize
 
-	path = fmt.Sprintf("%s%04.0f_%04.0f_MNT_LAMB93_IGN69.asc", path, fileX, fileY)
+	path = fmt.Sprintf("%s%s_%04.0f_%04.0f.asc", path, string(accuracy), fileX, fileY)
 
 	// Offsetting to get the right lower left coordinates
 	xll := fileX*1000 - cellSize/2
