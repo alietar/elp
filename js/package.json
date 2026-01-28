@@ -1,0 +1,25 @@
+{
+	"type": "module",
+	"scripts": {
+		"build": "babel --out-dir=dist src"
+	},
+	"dependencies": {
+		"fullscreen-ink": "^0.1.0",
+		"ink": "^6.6.0",
+		"ink-big-text": "^2.0.0",
+		"ink-select-input": "^6.2.0",
+		"ink-text-input": "^6.0.0",
+		"react": "^19.2.4"
+	},
+	"devDependencies": {
+		"@babel/cli": "^7.28.6",
+		"@babel/core": "^7.28.6",
+		"@babel/preset-env": "^7.28.6",
+		"@babel/preset-react": "^7.28.5"
+	},
+	"babel": {
+		"presets": [
+			"@babel/preset-react"
+		]
+	}
+}
