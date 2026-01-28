@@ -25,7 +25,7 @@ class Interface {
         else return colors.red(cardName);
       
       case 'modifier':
-        return colors.yellow.bold(cardName);
+        return colors.red.bold(cardName);
       
       case 'action':
         return colors.red.bold(cardName);
@@ -128,7 +128,18 @@ class Interface {
   }
 
   showDraw(player, card) {
-    console.log(`${player.name || `Player ${player.player_nb}`} drew:`, this.getColoredCard(card));
+
+    // On calcule la longueur de la carte (ex: "10" = 2, "Freeze" = 6)
+    // On utilise card.toString() pour ne pas compter les caractères invisibles des couleurs
+    const cardLength = card.toString().length;
+    
+    // On définit la variable dashes ICI
+    const dashes = '-'.repeat(cardLength + 2);
+
+    console.log(`${player.name || `Player ${player.player_nb}`} drew:`);
+    console.log(`  +${dashes}+`);
+    console.log(`  | ${this.getColoredCard(card)} |`);
+    console.log(`  +${dashes}+`);
   }
 
   showSeparator() {
