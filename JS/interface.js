@@ -110,7 +110,7 @@ class Interface {
         type: 'rawlist',
         name: 'choice',
         message: `${player.name || `Player ${player.player_nb}`} - Choose your move:`,
-        choices: ['Flip a card', 'Watch my card', 'Stop'],
+        choices: ['Flip a card', 'Watch my card', 'Help', 'Stop'],
       },
     ]);
 
@@ -140,6 +140,11 @@ class Interface {
     console.log(`  +${dashes}+`);
     console.log(`  | ${this.getColoredCard(card)} |`);
     console.log(`  +${dashes}+`);
+  }
+
+  showHelpProbability(player, proba) {
+    const percent = (proba * 100).toFixed(2);
+    console.log(`${player.name || `Player ${player.player_nb}`} - Risk of duplicate: ${percent}%`);
   }
 
   showSeparator() {
