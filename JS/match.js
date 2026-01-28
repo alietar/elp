@@ -1,5 +1,7 @@
 import { Hand } from './player_hand.js';
 import { Game } from './game.js';
+import { packet, defausse } from './game_init.js';
+import { doIHaveToDraw } from './helper.js'
 
 class Match {
     constructor(playerCount, ui = null) {
@@ -198,6 +200,7 @@ class Match {
                         }
                     }
                 }
+                //console.log('Defausse:', Array.from(defausse.entries()));
                 index += 1;
                 continue;
             }
@@ -205,10 +208,20 @@ class Match {
             if (choice === 'Watch my card') {
                 await this.ui.showHand(player);
                 await this.ui.pause(1);
+                //console.log('Defausse:', Array.from(defausse.entries()));
+                continue;
+            }
+
+            if (choice === 'Help') {
+                const proba = doIHaveToDraw(packet, player.hand_number);
+                this.ui.showHelpProbability(player, proba);
+                await this.ui.pause(1);
+                //console.log('Defausse:', Array.from(defausse.entries()));
                 continue;
             }
 
             this.playTurn(player, 'stop');
+            //console.log('Defausse:', Array.from(defausse.entries()));
             index += 1;
         }
     }

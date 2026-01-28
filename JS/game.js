@@ -122,7 +122,7 @@ class Game {
     }
 
     chooseTarget(currentPlayer) {
-        // Fallback simple : si l'UI ne choisit pas, on prend un joueur actif.
+        //Si l'UI ne choisit pas, on prend un joueur actif.
         const activePlayers = this.players.filter(p => p.state);
         if (activePlayers.length === 0) return currentPlayer;
         if (activePlayers.length === 1) return activePlayers[0];

@@ -6,6 +6,7 @@ const BG_GREY = "\x1b[47m";
 const FG_BLACK = "\x1b[30m";
 const RESET = "\x1b[0m";  
 
+
 class Interface {
   async askPlayerCount() {
     // Demande le nombre de joueurs (min 2).
@@ -81,7 +82,7 @@ class Interface {
         type: 'rawlist',
         name: 'choice',
         message: `${player.name || `Player ${player.player_nb}`} - Choose your move:`,
-        choices: ['Flip a card', 'Watch my card', 'Stop'],
+        choices: ['Flip a card', 'Watch my card', 'Help', 'Stop'],
       },
     ]);
 
@@ -96,6 +97,11 @@ class Interface {
 
   showDraw(player, card) {
     console.log(`${player.name || `Player ${player.player_nb}`} drew:`, card);
+  }
+
+  showHelpProbability(player, proba) {
+    const percent = (proba * 100).toFixed(2);
+    console.log(`${player.name || `Player ${player.player_nb}`} - Risk of duplicate: ${percent}%`);
   }
 
   showSeparator() {
