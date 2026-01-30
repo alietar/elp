@@ -12,13 +12,15 @@ import (
 	"github.com/alietar/elp/go/tileutils"
 )
 
-func Start() {
+func Start(port int) {
+	portStr := fmt.Sprintf(":%d", port)
+
 	http.HandleFunc("/points", func(w http.ResponseWriter, r *http.Request) { pointsHandler(w, r) })
 
 	fs := http.FileServer(http.Dir("../elm/"))
 	http.Handle("/", fs)
 
-	err := http.ListenAndServe(":8026", nil)
+	err := http.ListenAndServe(portStr, nil)
 	fmt.Println("%v", err)
 }
 

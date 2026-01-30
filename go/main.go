@@ -16,7 +16,7 @@ import (
 )
 
 func main() {
-	dlAll, dlSome, accuracy, perfMode := flagHandler()
+	dlAll, dlSome, accuracy, perfMode, port := flagHandler()
 
 	if perfMode {
 		nCPU := runtime.NumCPU()
@@ -82,9 +82,9 @@ func main() {
 		fmt.Println("        |/               `^ .'")
 
 		fmt.Println("\n\033[34m --- FIND REACHABLE ---\033[0m\n")
-		fmt.Println("\n\033[34m -> Starting the server\033[0m\n")
+		fmt.Printf("\n\n\033[34m -> Starting the server on port %d\033[0m\n", port)
 
-		server.Start()
+		server.Start(port)
 	}
 }
 
@@ -96,18 +96,18 @@ func isThereDBFolder() bool {
 	}
 }
 
-func flagHandler() (bool, bool, gpsfiles.MapAccuracy, bool) {
-	downloadAllFlagPtr := flag.Bool("dl-all", false, "Downloads all the db")
+func flagHandler() (bool, bool, gpsfiles.MapAccuracy, bool, int) {
+	downloadAllFlagPtr := flag.Bool("dl-all", false, "Downloads all the departement")
 	downloadSomeFlagPtr := flag.Bool("dl-some", false, "Downloads only the provided departement. Put them after all the flags!")
-	accuracy1FlagPtr := flag.Bool("accuracy-1", false, "1M Accuracy")
-	accuracy5FlagPtr := flag.Bool("accuracy-5", false, "5M Accuracy")
-	accuracy25FlagPtr := flag.Bool("accuracy-25", false, "25M Accuracy")
+	accuracyFlagPtr := flag.Int("accuracy", 25, "Specify accuracy in meters")
 	perfFlagPtr := flag.Bool("perf", false, "Doing perf tests")
+
+	portFlagPtr := flag.Int("port", 8080, "HTTP Server's port")
 
 	flag.Parse()
 
 	if *perfFlagPtr {
-		return false, false, gpsfiles.ACCURACY_25, true
+		return false, false, gpsfiles.ACCURACY_25, true, 0
 	}
 
 	if *downloadAllFlagPtr && *downloadSomeFlagPtr {
@@ -124,30 +124,25 @@ func flagHandler() (bool, bool, gpsfiles.MapAccuracy, bool) {
 	var accuracy gpsfiles.MapAccuracy
 
 	if *downloadAllFlagPtr || *downloadSomeFlagPtr {
-		if !*accuracy1FlagPtr && !*accuracy5FlagPtr && !*accuracy25FlagPtr {
-			fmt.Println("Please indicate at which accuracy you want to download")
-			fmt.Println("the file with the flags -accuracy-1, -accuracy-5 or -accuracy-25")
-			os.Exit(3)
-		}
-
-		if *downloadAllFlagPtr && *accuracy1FlagPtr {
-			fmt.Println("Downloading at 1M the whole France is too much, use -dl-some")
-			os.Exit(3)
-		}
-
-		if *accuracy1FlagPtr {
+		switch *accuracyFlagPtr {
+		case 1:
 			accuracy = gpsfiles.ACCURACY_1
-		} else if *accuracy5FlagPtr {
+		case 5:
 			accuracy = gpsfiles.ACCURACY_5
-		} else if *accuracy25FlagPtr {
+		case 25:
 			accuracy = gpsfiles.ACCURACY_25
-		} else {
+		default:
 			fmt.Println("Invalid accuracy, use either 1, 5 or 25")
+			os.Exit(3)
+		}
+
+		if *downloadAllFlagPtr && accuracy == gpsfiles.ACCURACY_1 {
+			fmt.Println("Downloading at 1M the whole France is too much, use -dl-some")
 			os.Exit(3)
 		}
 	}
 
-	return *downloadAllFlagPtr, *downloadSomeFlagPtr, accuracy, false
+	return *downloadAllFlagPtr, *downloadSomeFlagPtr, accuracy, false, *portFlagPtr
 }
 
 func downloadDepartments(dlAll, dlSome bool, accuracy gpsfiles.MapAccuracy) {
