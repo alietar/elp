@@ -16,6 +16,12 @@
 
 Nous travaillons sur la recréation du jeu Flip 7 en JavaScript, en divisant notre projet en deux modules. Le premier module se charge de la logique du jeu, incluant la gestion de la main du joueur, le lancement des parties et des manches, ainsi qu'une classe dédiée à la résolution des actions. Le deuxième module est une interface construite à l’aide du paquet ink, permettant de visualiser la carte du jeu et de faciliter les choix du joueur.
 
+## Installation
+
+```bash
+npm i
+```
+
 ## Utilisation
 
 Pour construire le projet, il suffit d'exécuter la commande suivante dans le répertoire /JS :
