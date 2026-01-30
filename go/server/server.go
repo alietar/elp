@@ -4,53 +4,25 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"math"
 	"net/http"
-	"text/template"
+	"runtime"
 
 	"github.com/alietar/elp/go/gpsfiles"
 	"github.com/alietar/elp/go/tileutils"
 )
 
-const N_GOROUTINE = 1
-
 func Start() {
-	// Handler for the main page
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) { mainHandler(w, r) })
 	http.HandleFunc("/points", func(w http.ResponseWriter, r *http.Request) { pointsHandler(w, r) })
+
+	fs := http.FileServer(http.Dir("../elm/"))
+	http.Handle("/", fs)
+
 	err := http.ListenAndServe(":8026", nil)
 	fmt.Println("%v", err)
 }
 
-func mainHandler(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Origin, Accept")
-	w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS")
-
-	if r.Method == "OPTIONS" {
-		w.WriteHeader(http.StatusOK)
-		return
-	}
-
-	tmpl, err := template.ParseFiles("server/map.html") // On charge le fichier HTML
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	tmpl.Execute(w, nil) // On exécute le template carte.html avec les données
-}
-
 func pointsHandler(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Origin, Accept")
-	w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS")
-
-	if r.Method == "OPTIONS" {
-		w.WriteHeader(http.StatusOK)
-		return
-	}
-
-	////// Add error management like point out of map etc...
 	fmt.Println("New request for points")
 	body, _ := io.ReadAll(r.Body)
 	fmt.Println(string(body))
@@ -97,7 +69,11 @@ func pointsHandler(w http.ResponseWriter, r *http.Request) {
 
 	var squaresToShow []tileutils.Wgs84Square
 
-	tiles := tileutils.ComputeTiles(jsonData.Lng, jsonData.Lat, jsonData.Deniv, accuracy, N_GOROUTINE)
+	nCPU := runtime.NumCPU()
+	nExploreWorker := int(math.Sqrt(float64(nCPU)))
+	nFileWorker := int(nCPU / nExploreWorker)
+
+	tiles := tileutils.ComputeTiles(jsonData.Lng, jsonData.Lat, jsonData.Deniv, accuracy, nExploreWorker, nFileWorker)
 
 	if len(tiles) == 0 {
 		fmt.Println("Couldn't compute, probably invalid coordinates")
