@@ -4,7 +4,7 @@
   <img src="https://www.tonton-outdoor.com/media/cache/sylius_large/de/92/a187da7d97bb6b3d338052c775ab.png" alt="IGN Logo" width="100px" />
 </div>
 
-<p align="center">ELP, GO - 3TC Groupe 33</p>
+<p align="center">ELP, GO - 3TC Groupe 32</p>
 
 <div align="center">
   <img alt="Golang" src="https://img.shields.io/badge/go-%2300ADD8.svg?style=for-the-badge&logo=go&logoColor=white">
