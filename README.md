@@ -4,4 +4,4 @@
 
 - [GO](go/README.md)
 - [ELM](elm/README.md)
-- [JavaScript](JS/README.md)
+- [JavaScript](js/README.md)
