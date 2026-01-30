@@ -26,7 +26,7 @@ func NewTileCache() *TileCache {
 	}
 }
 
-func (tc *TileCache) GetOrLoad(xLambert, yLambert float64, accuracy gpsfiles.MapAccuracy) (*Tile, int, int) {
+func (tc *TileCache) GetOrLoad(xLambert, yLambert float64, accuracy gpsfiles.MapAccuracy, nFileWorker int) (*Tile, int, int) {
 	cellSize := gpsfiles.ParseAccuracyFloat(accuracy)
 	tileSize := 1000.0 * cellSize
 
@@ -45,7 +45,7 @@ func (tc *TileCache) GetOrLoad(xLambert, yLambert float64, accuracy gpsfiles.Map
 	}
 
 	// If it doesn't exists, create it
-	tile, x, y := NewTileFromLambert(xLambert, yLambert, accuracy)
+	tile, x, y := NewTileFromLambert(xLambert, yLambert, accuracy, nFileWorker)
 
 	// Return after an error before adding to cache
 	if x == -1 && y == -1 || tile.Altitudes == nil {

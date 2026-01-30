@@ -1,10 +1,6 @@
 package tileutils
 
 import (
-	"fmt"
-	"runtime"
-	"strconv"
-	"strings"
 	"sync"
 )
 
@@ -48,7 +44,6 @@ func FindNeighbors(t *Tile, startX, startY int, wg *sync.WaitGroup, exploreAdj c
 				t.YLambertLL + t.CellSize*float64(1000-y),
 			}
 
-			// Ajustements précis des coordonnées (comme dans ton code original)
 			if x == 0 {
 				coord[0] -= t.CellSize * 1.2
 			}
@@ -56,7 +51,7 @@ func FindNeighbors(t *Tile, startX, startY int, wg *sync.WaitGroup, exploreAdj c
 				coord[0] += t.CellSize * 1.2
 			}
 			if y == 0 {
-				coord[1] += t.CellSize * 1.2
+				coord[1] += t.CellSize * 1
 			}
 			if y == MATRIX_SIZE-1 {
 				coord[1] -= t.CellSize * 1.2
@@ -84,20 +79,4 @@ func pushNeighbors(t *Tile, x, y int, stack *[]Point) {
 	if y < MATRIX_SIZE-1 && t.PotentiallyReachable[x][y+1] {
 		*stack = append(*stack, Point{x, y + 1})
 	}
-}
-
-func GetGoid() int64 {
-	var (
-		buf [64]byte
-		n   = runtime.Stack(buf[:], false)
-		stk = strings.TrimPrefix(string(buf[:n]), "goroutine")
-	)
-
-	idField := strings.Fields(stk)[0]
-	id, err := strconv.Atoi(idField)
-	if err != nil {
-		panic(fmt.Errorf("can not get goroutine id: %v", err))
-	}
-
-	return int64(id)
 }

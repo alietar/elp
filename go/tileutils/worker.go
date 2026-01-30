@@ -7,7 +7,7 @@ import (
 	"github.com/alietar/elp/go/gpsfiles"
 )
 
-func ComputeTiles(startLongitude, startLatitude, d float64, accuracy gpsfiles.MapAccuracy, nWorker int) (returnTiles []*Tile) {
+func ComputeTiles(startLongitude, startLatitude, d float64, accuracy gpsfiles.MapAccuracy, nExploreWorker, nFileWorker int) (returnTiles []*Tile) {
 	// Getting the Lambert coordinates
 	xLambert, yLambert, er := gpsfiles.ConvertWgs84ToLambert93(startLongitude, startLatitude)
 
@@ -22,12 +22,11 @@ func ComputeTiles(startLongitude, startLatitude, d float64, accuracy gpsfiles.Ma
 
 	// Concurrent tools init
 	tileCache := NewTileCache()
-	adjacentTileCoordinatesChan := make(chan [2]float64, 20000)
-	// adjacentTileCoordinatesChan := make(chan [2]float64, int(10000.0/float64(nWorker)))
+	adjacentTileCoordinatesChan := make(chan [2]float64, 50000)
 	var wg sync.WaitGroup
 
 	// Loading the first tile manually to find starting altitude
-	startTile, xStart, yStart := tileCache.GetOrLoad(xLambert, yLambert, accuracy)
+	startTile, xStart, yStart := tileCache.GetOrLoad(xLambert, yLambert, accuracy, nFileWorker)
 
 	// Did not find the tile, quitting
 	if xStart == -1 || yStart == -1 {
@@ -40,15 +39,10 @@ func ComputeTiles(startLongitude, startLatitude, d float64, accuracy gpsfiles.Ma
 	wg.Add(1)
 	adjacentTileCoordinatesChan <- [2]float64{xLambert, yLambert}
 
-	for i := range nWorker {
+	for i := range nExploreWorker {
 		fmt.Printf("Launching worker %d\n", i)
-		go tileWorker(&wg, tileCache, adjacentTileCoordinatesChan, d, startAlt, accuracy)
+		go tileWorker(&wg, tileCache, adjacentTileCoordinatesChan, d, startAlt, nFileWorker, accuracy)
 	}
-
-	// This go routine stops the listenings for the channel
-	// adjacentTileCoordinates when no worker are at work
-	// Which then stops the workers
-	// go waitRoutine(&wg, adjacentTileCoordinatesChan)
 
 	wg.Wait()
 	close(adjacentTileCoordinatesChan)
@@ -62,6 +56,7 @@ func tileWorker(wg *sync.WaitGroup,
 	tileCache *TileCache,
 	exploreChannel chan [2]float64,
 	d, alt float64,
+	nFileWorker int,
 	accuracy gpsfiles.MapAccuracy,
 ) {
 	// fmt.Println("Hey I'm a worker")
@@ -70,7 +65,7 @@ func tileWorker(wg *sync.WaitGroup,
 		xLambert := entryPointCoordinates[0]
 		yLambert := entryPointCoordinates[1]
 
-		workerComputeCoordinates(wg, tileCache, exploreChannel, xLambert, yLambert, d, alt, accuracy)
+		workerComputeCoordinates(wg, tileCache, exploreChannel, xLambert, yLambert, d, alt, nFileWorker, accuracy)
 	}
 }
 
@@ -78,9 +73,11 @@ func workerComputeCoordinates(wg *sync.WaitGroup,
 	tileCache *TileCache,
 	exploreChannel chan [2]float64,
 	xLambert, yLambert, d, alt float64,
+	nFileWorker int,
 	accuracy gpsfiles.MapAccuracy,
 ) (skipped bool) {
-	tile, xStart, yStart := tileCache.GetOrLoad(xLambert, yLambert, accuracy)
+	// Init matrices if new tile
+	tile, xStart, yStart := tileCache.GetOrLoad(xLambert, yLambert, accuracy, nFileWorker)
 
 	// Did not find the tile, skipping
 	if xStart == -1 || yStart == -1 {
@@ -90,7 +87,6 @@ func workerComputeCoordinates(wg *sync.WaitGroup,
 
 	tile.Mutex.Lock()
 
-	// Init matrices if new tile
 	if tile.PotentiallyReachable == nil {
 		tile.CreatePotentiallyReachable(d, alt)
 	}
@@ -109,7 +105,4 @@ func workerComputeCoordinates(wg *sync.WaitGroup,
 	FindNeighbors(tile, xStart, yStart, wg, exploreChannel)
 
 	return false
-}
-
-func waitRoutine(wg *sync.WaitGroup, adjacentTileCoordinates chan [2]float64) {
 }
