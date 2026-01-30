@@ -159,11 +159,6 @@ export const GameController = ({ playerCount, playerNames, onGameOver }) => {
     };
 
     const handleAction = (item) => {
-        if (item.value === 'view_hand') {
-            setViewState('hand');
-            return;
-        }
-
         if (item.value === 'helper') {
             const proba = doIHaveToDraw(packet, currentPlayer.hand_number);
             const percent = (proba * 100).toFixed(2);
@@ -249,20 +244,6 @@ export const GameController = ({ playerCount, playerNames, onGameOver }) => {
         );
     }
 
-    if (viewState === 'hand') {
-        return (
-            <Box flexDirection="column">
-                <Header title={`Main de ${currentPlayer.name}`} />
-                <Text>Nombres: {currentPlayer.hand_number.map(c => c).join(', ')}</Text>
-                <Text>Bonus: {currentPlayer.hand_bonus.join(', ')}</Text>
-                <Text>Actions: {currentPlayer.hand_actions.join(', ')}</Text>
-                <Box marginTop={1}>
-                    <SelectInput items={[{label: 'Retour', value: 'back'}]} onSelect={() => setViewState('menu')} />
-                </Box>
-            </Box>
-        );
-    }
-    
     if (viewState === 'target_selection' && pendingAction) {
         return (
             <Box flexDirection="column">
@@ -292,8 +273,7 @@ export const GameController = ({ playerCount, playerNames, onGameOver }) => {
     // Vue Principale (Menu de jeu)
     const menuItems = [
         { label: 'Piocher une carte', value: 'draw' },
-        { label: 'Voir ma main', value: 'view_hand' },
-        {label: "Besoin d'un coup de pouce ?", value: 'helper'},
+        { label: "Besoin d'un coup de pouce ?", value: 'helper'},
         { label: 'S\'arrêter', value: 'stop' }
     ];
 
