@@ -89,6 +89,7 @@ export const GameController = ({ playerCount, playerNames, onGameOver }) => {
                      setTimeout(endRound, 2000);
                 } else {
                     setMessage(`${currentPlayer.name} a pioché.`);
+                    setTimeout(nextPlayer, 1500);
                     setForceUpdate(n => n + 1); // Rafraichir l'affichage
                 }
             }
