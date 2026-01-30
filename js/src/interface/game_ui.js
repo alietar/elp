@@ -22,16 +22,22 @@ export const GameController = ({ playerCount, playerNames, onGameOver }) => {
     const [lastDrawnCards, setLastDrawnCards] = useState([]);
     const [message, setMessage] = useState("La manche commence !");
     const [viewState, setViewState] = useState('menu'); // 'menu', 'hand', 'target_selection', 'summary'
-    const [forceUpdate, setForceUpdate] = useState(0); // Hack pour forcer le render quand l'objet match change
     const [pendingAction, setPendingAction] = useState(null); // { card, owner, targets }
     const [pendingQueue, setPendingQueue] = useState([]); // Actions en attente (Flip Three)
+    const [isWaiting, setIsWaiting] = useState(false)
 
     // Helper pour récupérer le joueur actuel
     const currentPlayer = match.players[currentPlayerIndex];
 
     // --- LOGIQUE DE JEU ---
 
+    const waitThenNextPlayer = (waitTime) => {
+        setIsWaiting(true);
+        setTimeout(nextPlayer, waitTime);
+    }
+
     const nextPlayer = () => {
+        setIsWaiting(false);
         let nextIndex = (currentPlayerIndex + 1) % match.players.length;
         let loops = 0;
         
@@ -61,14 +67,14 @@ export const GameController = ({ playerCount, playerNames, onGameOver }) => {
         const activePlayer = match.players[currentPlayerIndex];
         if (!activePlayer.state) {
             setMessage(`DOUBLON ! ${activePlayer.name} est éliminé de la manche.`);
-            setTimeout(nextPlayer, 3000);
+            waitThenNextPlayer(2000);
         } else if (match.game.roundEnded) {
             setMessage(`FLIP 7 ou Fin de manche !`);
-            setTimeout(endRound, 3000);
+            setTimeout(endRound, 2000);
         } else {
             setMessage(`${activePlayer.name} a pioché.`);
             setForceUpdate(n => n + 1);
-            setTimeout(nextPlayer, 3000);
+            waitThenNextPlayer(2000);
         }
     };
 
@@ -159,6 +165,10 @@ export const GameController = ({ playerCount, playerNames, onGameOver }) => {
     };
 
     const handleAction = (item) => {
+        if (isWaiting) {
+            return;
+        }
+
         if (item.value === 'helper') {
             const proba = doIHaveToDraw(packet, currentPlayer.hand_number);
             const percent = (proba * 100).toFixed(2);
@@ -170,7 +180,7 @@ export const GameController = ({ playerCount, playerNames, onGameOver }) => {
         if (item.value === 'stop') {
             match.playTurn(currentPlayer, 'stop');
             setMessage(`${currentPlayer.name} s'arrête.`);
-            setTimeout(nextPlayer, 1500);
+            waitThenNextPlayer(2000)
             return;
         }
 
@@ -190,15 +200,13 @@ export const GameController = ({ playerCount, playerNames, onGameOver }) => {
                 // Vérifier si le joueur a sauté (doublon)
                 if (!currentPlayer.state) {
                     setMessage(`DOUBLON ! ${currentPlayer.name} est éliminé de la manche.`);
-                    setTimeout(nextPlayer, 2000);
+                    waitThenNextPlayer(2000);
                 } else if (match.game.roundEnded) {
-                     setMessage(`Fin de manche !`);
-                     setTimeout(endRound, 2000);
+                    setMessage(`Fin de manche !`);
+                    setTimeout(endRound, 2000);
                 } else {
                     setMessage(`${currentPlayer.name} a pioché.`);
-                    setTimeout(nextPlayer, 1500);
-                    setForceUpdate(n => n + 1); // Rafraichir l'affichage
-                    setTimeout(nextPlayer, 1500);
+                    waitThenNextPlayer(2000);
                 }
             }
         }
