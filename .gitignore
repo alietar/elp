@@ -58,3 +58,5 @@ yarn-error.log*
 Thumbs.db
 
 *.pdf
+
+JS/dist/

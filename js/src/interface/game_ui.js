@@ -82,13 +82,14 @@ export const GameController = ({ playerCount, playerNames, onGameOver }) => {
                 
                 // Vérifier si le joueur a sauté (doublon)
                 if (!currentPlayer.state) {
-                    setMessage(`💥 DOUBLON ! ${currentPlayer.name} est éliminé de la manche.`);
+                    setMessage(`DOUBLON ! ${currentPlayer.name} est éliminé de la manche.`);
                     setTimeout(nextPlayer, 2000);
                 } else if (match.game.roundEnded) {
-                     setMessage(`🎉 FLIP 7 ou Fin de manche !`);
+                     setMessage(`Fin de manche !`);
                      setTimeout(endRound, 2000);
                 } else {
                     setMessage(`${currentPlayer.name} a pioché.`);
+                    setTimeout(nextPlayer, 1500);
                     setForceUpdate(n => n + 1); // Rafraichir l'affichage
                 }
             }
@@ -103,7 +104,7 @@ export const GameController = ({ playerCount, playerNames, onGameOver }) => {
         if (winner) {
             return (
                 <Box flexDirection="column" alignItems="center" borderColor="green" borderStyle="double" padding={2}>
-                    <Text bold color="green">🏆 VICTOIRE FINALE 🏆</Text>
+                    <Text bold color="green"> VICTOIRE FINALE </Text>
                     <Text>Le vainqueur est {winner.name} avec {match.scores.get(winner.player_nb)} points !</Text>
                 </Box>
             );
@@ -152,7 +153,7 @@ export const GameController = ({ playerCount, playerNames, onGameOver }) => {
     const menuItems = [
         { label: 'Piocher une carte', value: 'draw' },
         { label: 'Voir ma main', value: 'view_hand' },
-        { label: 'Stop (S\'arrêter)', value: 'stop' }
+        { label: 'S\'arrêter', value: 'stop' }
     ];
 
     return (
