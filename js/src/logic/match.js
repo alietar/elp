@@ -1,7 +1,5 @@
 import { Hand } from './player_hand.js';
 import { Game } from './game.js';
-import { packet, defausse } from './game_init.js';
-import { doIHaveToDraw } from './helper.js'
 
 class Match {
     constructor(playerCount, ui = null) {
@@ -39,6 +37,9 @@ class Match {
         for (const player of this.players) {
             if (player.state) {
                 player.endGame(false);
+            } else if (player.eliminatedByDuplicate) {
+                player.score = 0;
+                player.flip7 = false;
             }
         }
 
@@ -144,86 +145,6 @@ class Match {
             if (total >= this.targetScore) return player;
         }
         return null;
-    }
-
-    async startGame() {
-        if (!this.ui) throw new Error('UI is required to start the game.');
-
-        // Récupère les pseudos.
-        for (const player of this.players) {
-            player.name = await this.ui.askPlayerName(player);
-        }
-
-        while (!this.gameOver) {
-            this.startRound();
-            await this.playRound();
-            this.endRound();
-            await this.ui.showRoundSummary(this.players, this.scores);
-            await this.ui.pause(1);
-
-            if (this.gameOver) {
-                const winner = this.getWinner();
-                if (winner) {
-                    this.ui.showWinner(winner, this.scores.get(winner.player_nb));
-                }
-            }
-        }
-    }
-
-    async playRound() {
-        let index = this.dealerIndex;
-        const totalPlayers = this.players.length;
-
-        while (!this.game.roundEnded && this.activePlayers().length > 0) {
-            const player = this.players[index % totalPlayers];
-            if (!player.state) {
-                index += 1;
-                continue;
-            }
-
-            await this.ui.pause(1);
-            this.ui.showSeparator();
-
-            const choice = await this.ui.askMove(player);
-
-            if (choice === 'Flip a card') {
-                const result = this.playTurn(player, 'flip');
-                if (result) {
-                    this.ui.showDraw(player, result.card);
-                    if (result.type === 'action' && result.needsTarget) {
-                        if (result.secondChanceTarget) {
-                            const target = await this.ui.chooseSecondChanceTarget(player, this.players);
-                            await this.resolveAction(result.card, player, target);
-                        } else {
-                            const target = await this.ui.chooseTarget(player, this.players);
-                            await this.resolveAction(result.card, player, target);
-                        }
-                    }
-                }
-                //console.log('Defausse:', Array.from(defausse.entries()));
-                index += 1;
-                continue;
-            }
-
-            if (choice === 'Watch my card') {
-                await this.ui.showHand(player);
-                await this.ui.pause(1);
-                //console.log('Defausse:', Array.from(defausse.entries()));
-                continue;
-            }
-
-            if (choice === 'Help') {
-                const proba = doIHaveToDraw(packet, player.hand_number);
-                this.ui.showHelpProbability(player, proba);
-                await this.ui.pause(1);
-                //console.log('Defausse:', Array.from(defausse.entries()));
-                continue;
-            }
-
-            this.playTurn(player, 'stop');
-            //console.log('Defausse:', Array.from(defausse.entries()));
-            index += 1;
-        }
     }
 }
 

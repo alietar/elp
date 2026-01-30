@@ -3,6 +3,8 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { Box, Text, Newline } from 'ink';
 import SelectInput from 'ink-select-input';
 import { Match } from '../logic/match.js'; // Ta classe existante
+import { doIHaveToDraw } from '../logic/helper.js';
+import { packet } from '../logic/game_init.js';
 import { CardVisual, CardText, Header } from './components.js';
 
 export const GameController = ({ playerCount, playerNames, onGameOver }) => {
@@ -17,10 +19,12 @@ export const GameController = ({ playerCount, playerNames, onGameOver }) => {
 
     // 2. États React pour suivre le jeu
     const [currentPlayerIndex, setCurrentPlayerIndex] = useState(match.dealerIndex);
-    const [lastDrawnCard, setLastDrawnCard] = useState(null);
+    const [lastDrawnCards, setLastDrawnCards] = useState([]);
     const [message, setMessage] = useState("La manche commence !");
     const [viewState, setViewState] = useState('menu'); // 'menu', 'hand', 'target_selection', 'summary'
     const [forceUpdate, setForceUpdate] = useState(0); // Hack pour forcer le render quand l'objet match change
+    const [pendingAction, setPendingAction] = useState(null); // { card, owner, targets }
+    const [pendingQueue, setPendingQueue] = useState([]); // Actions en attente (Flip Three)
 
     // Helper pour récupérer le joueur actuel
     const currentPlayer = match.players[currentPlayerIndex];
@@ -41,7 +45,7 @@ export const GameController = ({ playerCount, playerNames, onGameOver }) => {
         if (loops === match.players.length || match.game.roundEnded || match.activePlayers().length === 0) {
             endRound();
         } else {
-            setLastDrawnCard(null);
+            setLastDrawnCards([]);
             setMessage(`C'est au tour de ${match.players[nextIndex].name}`);
             setCurrentPlayerIndex(nextIndex);
             setViewState('menu');
@@ -53,9 +57,118 @@ export const GameController = ({ playerCount, playerNames, onGameOver }) => {
         setViewState('summary');
     };
 
+    const finalizeAfterAction = () => {
+        const activePlayer = match.players[currentPlayerIndex];
+        if (!activePlayer.state) {
+            setMessage(`💥 DOUBLON ! ${activePlayer.name} est éliminé de la manche.`);
+            setTimeout(nextPlayer, 2000);
+        } else if (match.game.roundEnded) {
+            setMessage(`🎉 FLIP 7 ou Fin de manche !`);
+            setTimeout(endRound, 2000);
+        } else {
+            setMessage(`${activePlayer.name} a pioché.`);
+            setForceUpdate(n => n + 1);
+            setTimeout(nextPlayer, 1500);
+        }
+    };
+
+    const getTargetCandidates = (card, owner) => {
+        const activeTargets = match.players.filter(p => p.state);
+        if (card === 'Second Chance' && owner.hasSecondChance()) {
+            const eligible = activeTargets.filter(p => p !== owner && !p.hasSecondChance());
+            if (eligible.length <= 1) {
+                return { needsSelection: false, targets: eligible.length === 1 ? eligible : [null] };
+            }
+            return { needsSelection: true, targets: eligible };
+        }
+        if (activeTargets.length <= 1) {
+            return { needsSelection: false, targets: activeTargets.length === 1 ? activeTargets : [owner] };
+        }
+        return { needsSelection: true, targets: activeTargets };
+    };
+
+    const resolveActionChain = (card, owner, target) => {
+        const enqueuePending = (result, actionOwner, queue) => {
+            if (result && result.pendingActions && result.pendingActions.length > 0 && !match.game.roundEnded) {
+                return [
+                    ...result.pendingActions.map(pendingCard => ({ card: pendingCard, owner: actionOwner })),
+                    ...queue
+                ];
+            }
+            return queue;
+        };
+
+        const step = (queue) => {
+            if (queue.length === 0 || match.game.roundEnded) {
+                setPendingQueue([]);
+                finalizeAfterAction();
+                return;
+            }
+
+            const [next, ...rest] = queue;
+            const targetInfo = getTargetCandidates(next.card, next.owner);
+            if (targetInfo.needsSelection) {
+                setPendingQueue(rest);
+                setPendingAction({
+                    card: next.card,
+                    owner: next.owner,
+                    targets: targetInfo.targets
+                });
+                setViewState('target_selection');
+                return;
+            }
+
+            const autoTarget = targetInfo.targets[0] ?? null;
+            const result = match.game.resolveAction(next.card, next.owner, autoTarget);
+            if (result && result.drawnCards && result.drawnCards.length > 0) {
+                setLastDrawnCards(result.drawnCards);
+                const nextQueue = enqueuePending(result, result.actionOwner || next.owner, rest);
+                setTimeout(() => step(nextQueue), 1000);
+                return;
+            }
+
+            const nextQueue = enqueuePending(result, result && result.actionOwner ? result.actionOwner : next.owner, rest);
+            step(nextQueue);
+        };
+
+        const initialResult = match.game.resolveAction(card, owner, target);
+        if (initialResult && initialResult.drawnCards && initialResult.drawnCards.length > 0) {
+            setLastDrawnCards(initialResult.drawnCards);
+            const initialQueue = enqueuePending(initialResult, initialResult.actionOwner || owner, pendingQueue);
+            setTimeout(() => step(initialQueue), 1000);
+            return;
+        }
+
+        const startQueue = enqueuePending(initialResult, initialResult && initialResult.actionOwner ? initialResult.actionOwner : owner, pendingQueue);
+        step(startQueue);
+    };
+
+    const startActionFlow = (card, owner) => {
+        const targetInfo = getTargetCandidates(card, owner);
+        if (targetInfo.needsSelection) {
+            setPendingAction({
+                card,
+                owner,
+                targets: targetInfo.targets
+            });
+            setTimeout(() => setViewState('target_selection'), 1200);
+            return;
+        }
+        const autoTarget = targetInfo.targets[0] ?? null;
+        resolveActionChain(card, owner, autoTarget);
+    };
+
     const handleAction = (item) => {
         if (item.value === 'view_hand') {
             setViewState('hand');
+            return;
+        }
+
+        if (item.value === 'helper') {
+            const proba = doIHaveToDraw(packet, currentPlayer.hand_number);
+            const percent = (proba * 100).toFixed(2);
+            setMessage(`${currentPlayer.name} - Risque de doublon : ${percent}%`);
+            setForceUpdate(n => n + 1);
             return;
         }
 
@@ -71,13 +184,12 @@ export const GameController = ({ playerCount, playerNames, onGameOver }) => {
             const result = match.playTurn(currentPlayer, 'flip');
             
             if (result && result.card) {
-                setLastDrawnCard(result.card);
+                setLastDrawnCards([result.card]);
                 
                 if (result.type === 'action' && result.needsTarget) {
                     setMessage(`Action ${result.card} ! Choisir une cible.`);
-                    // TODO: Implémenter la sélection de cible (simplifié ici pour l'exemple)
-                    // Pour l'instant, on applique l'action sans cible ou auto-cible pour ne pas bloquer
-                    match.game.resolveAction(result.card, currentPlayer, null); 
+                    startActionFlow(result.card, currentPlayer);
+                    return;
                 } 
                 
                 // Vérifier si le joueur a sauté (doublon)
@@ -91,6 +203,7 @@ export const GameController = ({ playerCount, playerNames, onGameOver }) => {
                     setMessage(`${currentPlayer.name} a pioché.`);
                     setTimeout(nextPlayer, 1500);
                     setForceUpdate(n => n + 1); // Rafraichir l'affichage
+                    setTimeout(nextPlayer, 1500);
                 }
             }
         }
@@ -126,6 +239,7 @@ export const GameController = ({ playerCount, playerNames, onGameOver }) => {
                         onSelect={() => {
                             match.startRound();
                             setCurrentPlayerIndex(match.dealerIndex);
+                            setLastDrawnCards([]);
                             setViewState('menu');
                             setMessage("Nouvelle manche !");
                         }} 
@@ -148,12 +262,43 @@ export const GameController = ({ playerCount, playerNames, onGameOver }) => {
             </Box>
         );
     }
+    
+    if (viewState === 'target_selection' && pendingAction) {
+        return (
+            <Box flexDirection="column">
+                <Header title="Choisir une cible" />
+                <Text>{pendingAction.owner.name || `Player ${pendingAction.owner.player_nb}`} a tiré la carte.</Text>
+                <Text>Action: {pendingAction.card}</Text>
+                <Box marginTop={1}>
+                    <SelectInput
+                        items={pendingAction.targets.map(p => ({
+                            label: p.name || `Player ${p.player_nb}`,
+                            value: p
+                        }))}
+                        onSelect={(item) => {
+                            const action = pendingAction;
+                            setPendingAction(null);
+                            if (item?.value) {
+                                setMessage(`Action ${action.card} sur ${item.value.name}.`);
+                            }
+                            resolveActionChain(action.card, action.owner, item?.value || null);
+                        }}
+                    />
+                </Box>
+            </Box>
+        );
+    }
 
     // Vue Principale (Menu de jeu)
     const menuItems = [
         { label: 'Piocher une carte', value: 'draw' },
         { label: 'Voir ma main', value: 'view_hand' },
+<<<<<<< HEAD
         { label: 'S\'arrêter', value: 'stop' }
+=======
+        {label: "Besoin d'un coup de pouce ?", value: 'helper'},
+        { label: 'Stop (S\'arrêter)', value: 'stop' }
+>>>>>>> b68d8f0 (ajout gestion des actions par l'interface)
     ];
 
     return (
@@ -165,9 +310,11 @@ export const GameController = ({ playerCount, playerNames, onGameOver }) => {
             
             <Box borderStyle="single" padding={1} marginY={1} flexDirection="column" alignItems="center">
                 <Text italic color="gray">{message}</Text>
-                {lastDrawnCard && (
-                    <Box marginTop={1}>
-                        <CardVisual card={lastDrawnCard} />
+                {lastDrawnCards.length > 0 && (
+                    <Box marginTop={1} flexDirection="row" flexWrap="wrap" gap={1}>
+                        {lastDrawnCards.map((card, index) => (
+                            <CardVisual key={`${card}-${index}`} card={card} />
+                        ))}
                     </Box>
                 )}
             </Box>

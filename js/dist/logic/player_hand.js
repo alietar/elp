@@ -8,6 +8,7 @@ class Hand {
     this.state = true;
     this.score = 0;
     this.flip7 = false;
+    this.eliminatedByDuplicate = false;
   }
   addCard(card) {
     if (!this.state) return 'inactive';
@@ -56,6 +57,8 @@ class Hand {
     if (unique.size !== this.hand_number.length) {
       this.state = false;
       this.score = 0;
+      this.flip7 = false;
+      this.eliminatedByDuplicate = true;
       console.log(`Doublon détecté : Joueur ${this.player_nb} éliminé (score = 0)`);
       return true;
     }
@@ -104,6 +107,7 @@ class Hand {
   endGame(isFreeze = false) {
     if (!this.state) return;
     this.state = false;
+    this.eliminatedByDuplicate = false;
     const numberScore = this.pointInMyHand();
     const bonusScore = this.pointInBonus();
     this.score = (this.hasX2Bonus() ? numberScore * 2 : numberScore) + bonusScore;
@@ -138,6 +142,7 @@ class Hand {
     this.state = true;
     this.score = 0;
     this.flip7 = false;
+    this.eliminatedByDuplicate = false;
   }
 }
 export { Hand };

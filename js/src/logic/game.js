@@ -31,8 +31,8 @@ class Game {
 
         const addResult = player.addCard(card);
         if (addResult === 'second_chance') {
-            // La carte est ignorée grâce à Second Chance, on repioche.
-            return this.resolveDraw(player);
+            // La carte est ignorée grâce à Second Chance, le tour s'arrête ici.
+            return { card, type: 'second_chance' };
         }
         if (player.flip7) this.roundEnded = true;
         return { card, type: 'normal' };
@@ -88,10 +88,12 @@ class Game {
 
     resolveFlipThree(currentPlayer) {
         const pendingActions = [];
+        const drawnCards = [];
 
         for (let i = 0; i < 3; i += 1) {
             const card = this.drawCard();
             if (!card) break;
+            drawnCards.push(card);
 
             const playerLabel = currentPlayer.name || `Player ${currentPlayer.player_nb}`;
 
@@ -118,7 +120,7 @@ class Game {
         if (this.roundEnded) return null;
 
         // actionOwner permet à l'UI de savoir qui doit choisir la cible.
-        return { pendingActions, actionOwner: currentPlayer };
+        return { pendingActions, actionOwner: currentPlayer, drawnCards };
     }
 
     chooseTarget(currentPlayer) {
