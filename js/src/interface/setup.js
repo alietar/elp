@@ -15,7 +15,7 @@ export const PlayerCountSetup = ({ onSubmit }) => {
 					onChange={setCount}
 					onSubmit={(val) => {
                         const num = parseInt(val, 10);
-                        if (!isNaN(num) && num > 0) onSubmit(num);
+                        if (!isNaN(num) && num > 1 && num <= 18) onSubmit(num);
                     }}
 				/>
 			</Box>

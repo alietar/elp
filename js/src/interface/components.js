@@ -16,13 +16,13 @@ export const CardText = ({ card }) => {
 };
 
 export const CardVisual = ({ card }) => {
-    if (!card) return <Box height={5} width={14} borderStyle="single" justifyContent="center" alignItems="center"><Text>?</Text></Box>;
+    if (!card) return <Box height={10} width={14} borderStyle="single" justifyContent="center" alignItems="center"><Text>?</Text></Box>;
 
     const cardStr = card.toString();
     // Centrage approximatif
 
     return (
-        <Box borderStyle="double" borderColor="white" flexDirection="column" width={15} paddingY={5} alignItems="center">
+        <Box borderStyle="double" borderColor="white" flexDirection="column" flexBasis="10" paddingY="4" alignItems="center">
             <CardText card={card} />
         </Box>
     );

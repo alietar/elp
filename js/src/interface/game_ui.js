@@ -60,15 +60,15 @@ export const GameController = ({ playerCount, playerNames, onGameOver }) => {
     const finalizeAfterAction = () => {
         const activePlayer = match.players[currentPlayerIndex];
         if (!activePlayer.state) {
-            setMessage(`💥 DOUBLON ! ${activePlayer.name} est éliminé de la manche.`);
-            setTimeout(nextPlayer, 2000);
+            setMessage(`DOUBLON ! ${activePlayer.name} est éliminé de la manche.`);
+            setTimeout(nextPlayer, 3000);
         } else if (match.game.roundEnded) {
-            setMessage(`🎉 FLIP 7 ou Fin de manche !`);
-            setTimeout(endRound, 2000);
+            setMessage(`FLIP 7 ou Fin de manche !`);
+            setTimeout(endRound, 3000);
         } else {
             setMessage(`${activePlayer.name} a pioché.`);
             setForceUpdate(n => n + 1);
-            setTimeout(nextPlayer, 1500);
+            setTimeout(nextPlayer, 3000);
         }
     };
 
@@ -298,25 +298,42 @@ export const GameController = ({ playerCount, playerNames, onGameOver }) => {
     ];
 
     return (
-        <Box flexDirection="column" width="100%">
+        <Box flexDirection="column" width="100%" height="100%" justifyContent="space-between" gap="2">
             <Box justifyContent="space-between" width="100%">
                 <Text>Joueur: <Text bold color="cyan">{currentPlayer.name}</Text></Text>
+                <Text bold color="blue">{message}</Text>
                 <Text>Score manche: {currentPlayer.pointInMyHand()}</Text>
             </Box>
-            
-            <Box borderStyle="single" padding={1} marginY={1} flexDirection="column" alignItems="center">
-                <Text italic color="gray">{message}</Text>
+            <Box height="50%" width="100%" justifyContent="center">
                 {lastDrawnCards.length > 0 && (
                     <Box marginTop={1} flexDirection="row" flexWrap="wrap" gap={1}>
-                        {lastDrawnCards.map((card, index) => (
-                            <CardVisual key={`${card}-${index}`} card={card} />
+                        {lastDrawnCards.map((card) => (
+                           <CardVisual card={card} />
                         ))}
                     </Box>
                 )}
             </Box>
-
-            <Text>Que voulez-vous faire ?</Text>
-            <SelectInput items={menuItems} onSelect={handleAction} />
+            <Box width="100%">
+                <Box flexDirection="column" height="100%">
+                    <Text>Que voulez-vous faire ?</Text>
+                    <Box borderStyle="single" padding="1" height="100%">
+                        <SelectInput items={menuItems} onSelect={handleAction} />
+                    </Box>
+                </Box>
+                <Box flexDirection="column" width="100%" height="100%">
+                    <Text>Votre main</Text>
+                    <Box borderStyle="single"width="100%" height="100%" flexDirection="column" paddingX="1" justifyContent="center">
+                        <Box width="100%" gap="2">
+                            { currentPlayer.hasSecondChance() ? (
+                                <CardVisual card="Second chance" />
+                            ) : ("")}
+                            {currentPlayer.all_cards.map((card) => (
+                                <CardVisual card={card} />
+                            ))}
+                        </Box>
+                    </Box>
+                </Box>
+            </Box>
         </Box>
     );
 };

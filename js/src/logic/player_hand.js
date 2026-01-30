@@ -6,6 +6,7 @@ class Hand {
         this.hand_number = [];
         this.hand_bonus = [];
         this.hand_actions = [];
+        this.all_cards = [];
         this.state = true;
         this.score = 0;
         this.flip7 = false;
@@ -22,9 +23,13 @@ class Hand {
                 return 'second_chance';
             }
         }
+
         this.hand_number.push(card);
+        this.all_cards.push(card);
+
         if (this.checkForDuplicates()) {
             this.hand_number.pop();
+            this.all_cards.pop();
             this.addToDeck(card);
             return 'duplicate';
         }
@@ -33,6 +38,7 @@ class Hand {
     }
 
     this.hand_bonus.push(card);
+    this.all_cards.push(card);
     return 'ok';
     }
 
@@ -165,6 +171,7 @@ class Hand {
         this.hand_number = [];
         this.hand_bonus = [];
         this.hand_actions = [];
+        this.all_cards = [];
         this.state = true;
         this.score = 0;
         this.flip7 = false;
