@@ -293,12 +293,8 @@ export const GameController = ({ playerCount, playerNames, onGameOver }) => {
     const menuItems = [
         { label: 'Piocher une carte', value: 'draw' },
         { label: 'Voir ma main', value: 'view_hand' },
-<<<<<<< HEAD
-        { label: 'S\'arrêter', value: 'stop' }
-=======
         {label: "Besoin d'un coup de pouce ?", value: 'helper'},
-        { label: 'Stop (S\'arrêter)', value: 'stop' }
->>>>>>> b68d8f0 (ajout gestion des actions par l'interface)
+        { label: 'S\'arrêter', value: 'stop' }
     ];
 
     return (
