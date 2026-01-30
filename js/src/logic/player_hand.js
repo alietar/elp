@@ -87,7 +87,7 @@ class Hand {
         if (index === -1) return false;
         this.hand_actions.splice(index, 1);
         this.addToDeck('Second Chance');
-        console.log(`✨ Second Chance utilisée : doublon ignoré pour Joueur ${this.player_nb}`);
+        console.log(`Second Chance utilisée : doublon ignoré pour Joueur ${this.player_nb}`);
         return true;
     }
 
