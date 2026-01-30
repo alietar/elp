@@ -17,7 +17,7 @@ func Start(port int) {
 
 	http.HandleFunc("/points", func(w http.ResponseWriter, r *http.Request) { pointsHandler(w, r) })
 
-	fs := http.FileServer(http.Dir("../elm/"))
+	fs := http.FileServer(http.Dir("../elm/static/"))
 	http.Handle("/", fs)
 
 	err := http.ListenAndServe(portStr, nil)

@@ -48,7 +48,7 @@ responseDecoder =
 fetchSquares : StartPointData -> (Result Http.Error ServerResponse -> msg) -> Cmd msg
 fetchSquares data toMsg =
     Http.post
-        { url = "http://localhost:8026/points" -- URL
+        { url = "/points" -- URL
         , body = Http.jsonBody (encodeUser data)    -- Ou jsonBody si on doit envoyer des filtres
         , expect = Http.expectJson toMsg responseDecoder
         }
