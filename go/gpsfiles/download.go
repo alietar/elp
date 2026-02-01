@@ -130,11 +130,11 @@ func downloadFromURL(url string, filename string) {
 	out.Close() // On ferme le fichier avant de le décompresser
 }
 
-func unzip(zipPath string, outputFolder string) {
+func unzip(zipPath string, outputFolder string, decompressPath string) {
 	// Décompression du fichier .7z
 	fmt.Print("└─> Decompressing the file...")
 
-	cmd := exec.Command("7zz", "e", zipPath, "-o"+outputFolder, "-y", "-r", "*.asc") // commande pour extraire uniquement les fichiers .asc dans le dossier bd (e pour extraire, o pour choisir le répertoire, y pour répondre oui à toutes les questions si besoin, r pour parcourir tous les sous-dossiers du .7z)
+	cmd := exec.Command(decompressPath, "e", zipPath, "-o"+outputFolder, "-y", "-r", "*.asc") // commande pour extraire uniquement les fichiers .asc dans le dossier bd (e pour extraire, o pour choisir le répertoire, y pour répondre oui à toutes les questions si besoin, r pour parcourir tous les sous-dossiers du .7z)
 
 	// On lance la commande et on attend la fin
 	err := cmd.Run()
@@ -170,7 +170,7 @@ func removeDepartNb(accuracy MapAccuracy) {
 	}
 }
 
-func DownloadUnzipDepartment(nb int, accuracy MapAccuracy) {
+func DownloadUnzipDepartment(nb int, accuracy MapAccuracy, decompressPath string) {
 	fmt.Printf("Starting download procedure for department n°\033[1m%02d\033[0m at \033[1m%s\033[0m\n", nb, string(accuracy))
 
 	// Finding the ressource URL
@@ -224,19 +224,19 @@ func DownloadUnzipDepartment(nb int, accuracy MapAccuracy) {
 	fmt.Println(filename)
 	fmt.Println(url)
 	downloadFromURL(url, filename)
-	unzip(filename, "./db/"+string(accuracy))
+	unzip(filename, "./db/"+string(accuracy), decompressPath)
 
 	// Removing departement number in file name
 	removeDepartNb(accuracy)
 }
 
-func DownloadAllDepartements(accuracy MapAccuracy) {
+func DownloadAllDepartements(accuracy MapAccuracy, decompressPath string) {
 	for compteur := 1; compteur < 96; compteur++ { // On ne s'occupe que des départements métropolitains (1 à 95)
 		if compteur == 20 { // On ignore le 20 car c'est la Corse (2A et 2B)
 			continue
 		}
 
-		DownloadUnzipDepartment(compteur, accuracy)
+		DownloadUnzipDepartment(compteur, accuracy, decompressPath)
 	}
 }
 

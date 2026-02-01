@@ -23,6 +23,9 @@
 
 Notre projet a pour objectif de déterminer la zone atteignable autour d'un point selon une contrainte de dénivelé. L'utilisateur indique la position initiale souhaitée en coordonnées GPS WGS84 et le dénivelé maximal accepté (on cherche la zone avec +- ce dénivelé). Notre programme affiche alors une carte interactive affichant la zone en question. Nous utilisons pour cela les données topographiques de l'IGN fournissant l'altitude d'un point tous les 25m. Notre algorithme se concentre uniquement sur les départements français métropolitains (hors Corse).
 
+L'interface a été réalisée dans le cadre du [projet ELM](../elm/README.md).
+
+Le projet est accessible en ligne sur [reachable.lietar.net](reachable.lietar.net) (uniquement le Rhône en 25 m et 5 m).
 
 # Installation et mise en place
 
@@ -40,31 +43,32 @@ cd elp/go
 
 ### Téléchargement des données topographiques de l'IGN
 
-
 > [!WARNING]
-> Les données topographiques prennet de la place, par département : ~xMo pour 25 m, ~xMo pour 5 m, ~xMo pour 1 m.
+> Les données topographiques prennent de la place, par département : ~ 40 Mo pour 25 m, ~ 300 Mo pour 5 m, ~ 4 Go pour 1 m.
 
 ```console
 // Syntaxe
-go run main.go -accuracy-1|-accuracy-5|-accuracy-25 -dl-some <n°depart>|-dl-all
+go run main.go -7z=<chemin vers l'éxécutable de 7z, (défaut)7z> -accuracy=<1|5|(défaut)25> -dl-all|-dl-some <n°depart> <n°depart> ... 
 
-// Exemple pour le rhône en précision 5m
-go run main.go -accuracy-5 -dl-some 69
+// Exemple pour le Rhône et l'Isère en précision 5 m
+go run main.go -accuracy=5 -dl-some 69 38
+
+// Exemple pour tous les départements en précision 25 m avec 7z non conventionnel
+go run main.go -7z=7zz -dl-all
 ```
 
 # Usage
 
 ```console
-go run main.go
+go run main.go -port=<port serveur HTTP (défaut)8080>
 ```
 
 Puis aller sur [http://localhost:8080](htpp://localhost:8080)
 
-
 # Benchmarks
 
 Outils utilisés :
-- [**pprof**](https://github.com/google/pprof) : `go run main.go -perf` puis `go tool pprof -http=:8000 cpu.prof`
+- [**pprof**](https://github.com/google/pprof) : `go run main.go -perf` puis `go tool pprof -http=:8000 <chemin vers xxx.prof>`
 - [**plow**](https://github.com/six-ddc/plow) : `plow -c 10 http://127.0.0.1:8080/points --rate 30/1s --body='{"lat":45.7838052,"lng":4.821928,"deniv":1,"accuracy":1}' -m POST -d 10s`
 
 # Pour aller plus loin

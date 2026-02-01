@@ -16,7 +16,7 @@ import (
 )
 
 func main() {
-	dlAll, dlSome, accuracy, perfMode, port := flagHandler()
+	dlAll, dlSome, accuracy, perfMode, port, decompressPath := flagHandler()
 
 	if perfMode {
 		nCPU := runtime.NumCPU()
@@ -72,7 +72,7 @@ func main() {
 		// 	fmt.Println("\nFinished profiling")
 		// }
 	} else {
-		downloadDepartments(dlAll, dlSome, accuracy)
+		downloadDepartments(dlAll, dlSome, accuracy, decompressPath)
 
 		fmt.Println("\n        _,--',   _._.--._____")
 		fmt.Println(" .--.--';_'-.', \";_      _.,-'")
@@ -96,10 +96,11 @@ func isThereDBFolder() bool {
 	}
 }
 
-func flagHandler() (bool, bool, gpsfiles.MapAccuracy, bool, int) {
+func flagHandler() (bool, bool, gpsfiles.MapAccuracy, bool, int, string) {
 	downloadAllFlagPtr := flag.Bool("dl-all", false, "Downloads all the departement")
 	downloadSomeFlagPtr := flag.Bool("dl-some", false, "Downloads only the provided departement. Put them after all the flags!")
 	accuracyFlagPtr := flag.Int("accuracy", 25, "Specify accuracy in meters")
+	decompressFlagPtr := flag.String("7z", "7z", "Path to 7z")
 	perfFlagPtr := flag.Bool("perf", false, "Doing perf tests")
 
 	portFlagPtr := flag.Int("port", 8080, "HTTP Server's port")
@@ -107,7 +108,7 @@ func flagHandler() (bool, bool, gpsfiles.MapAccuracy, bool, int) {
 	flag.Parse()
 
 	if *perfFlagPtr {
-		return false, false, gpsfiles.ACCURACY_25, true, 0
+		return false, false, gpsfiles.ACCURACY_25, true, 0, ""
 	}
 
 	if *downloadAllFlagPtr && *downloadSomeFlagPtr {
@@ -142,12 +143,12 @@ func flagHandler() (bool, bool, gpsfiles.MapAccuracy, bool, int) {
 		}
 	}
 
-	return *downloadAllFlagPtr, *downloadSomeFlagPtr, accuracy, false, *portFlagPtr
+	return *downloadAllFlagPtr, *downloadSomeFlagPtr, accuracy, false, *portFlagPtr, *decompressFlagPtr
 }
 
-func downloadDepartments(dlAll, dlSome bool, accuracy gpsfiles.MapAccuracy) {
+func downloadDepartments(dlAll, dlSome bool, accuracy gpsfiles.MapAccuracy, decompressPath string) {
 	if dlAll {
-		gpsfiles.DownloadAllDepartements(accuracy)
+		gpsfiles.DownloadAllDepartements(accuracy, decompressPath)
 
 		fmt.Println("\n\033[32m\033[1mSuccessfully downloaded requested departments\033[0m")
 	} else if dlSome {
@@ -177,7 +178,7 @@ func downloadDepartments(dlAll, dlSome bool, accuracy gpsfiles.MapAccuracy) {
 		}
 
 		for _, nb := range departementsNb {
-			gpsfiles.DownloadUnzipDepartment(nb, accuracy)
+			gpsfiles.DownloadUnzipDepartment(nb, accuracy, decompressPath)
 		}
 
 		fmt.Println("\n\033[32m\033[1mSuccessfully downloaded requested departments\033[0m")
