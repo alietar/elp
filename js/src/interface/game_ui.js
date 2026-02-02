@@ -77,7 +77,6 @@ export const GameController = ({ playerCount, playerNames, onGameOver }) => {
             setTimeout(endRound, 2000);
         } else {
             setMessage(`${activePlayer.name} a pioché.`);
-            setForceUpdate(n => n + 1);
             waitThenNextPlayer(2000);
         }
     };
@@ -177,7 +176,6 @@ export const GameController = ({ playerCount, playerNames, onGameOver }) => {
             const proba = doIHaveToDraw(packet, currentPlayer.hand_number);
             const percent = (proba * 100).toFixed(2);
             setMessage(`${currentPlayer.name} - Risque de doublon : ${percent}%`);
-            setForceUpdate(n => n + 1);
             return;
         }
 
