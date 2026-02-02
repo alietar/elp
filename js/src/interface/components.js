@@ -22,7 +22,7 @@ export const CardVisual = ({ card }) => {
     // Centrage approximatif
 
     return (
-        <Box borderStyle="double" borderColor="white" flexDirection="column" flexBasis="10" paddingY="4" alignItems="center">
+        <Box borderStyle="double" borderColor="white" flexDirection="column" flexBasis="10" paddingY="3" alignItems="center">
             <CardText card={card} />
         </Box>
     );

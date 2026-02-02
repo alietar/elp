@@ -19,7 +19,11 @@ class Hand {
     if (this.isCardNumber(card)) {
         if (this.hand_number.includes(card)) {
             if (this.useSecondChanceIfAvailable()) {
-                this.addToDeck(card);
+                this.hand_number.push(card);
+                this.all_cards.push(card);
+                
+                this.checkWin(); 
+        
                 return 'second_chance';
             }
         }

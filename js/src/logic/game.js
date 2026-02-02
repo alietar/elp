@@ -45,7 +45,7 @@ class Game {
             if (targetPlayer && targetPlayer !== currentPlayer) {
                 if (!targetPlayer.hasSecondChance()) {
                     // Donne Second Chance au joueur ciblé.
-                    targetPlayer.receiveSecondChance([targetPlayer]);
+                    targetPlayer.receiveSecondChance(this.players);
                 } else {
                     // Cible invalide (déjà Second Chance) => défausse.
                     this.discardCard('Second Chance');

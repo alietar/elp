@@ -66,7 +66,11 @@ export const GameController = ({ playerCount, playerNames, onGameOver }) => {
     const finalizeAfterAction = () => {
         const activePlayer = match.players[currentPlayerIndex];
         if (!activePlayer.state) {
+            if (activePlayer.eliminatedByDuplicate) {
             setMessage(`DOUBLON ! ${activePlayer.name} est éliminé de la manche.`);
+            } else {
+                setMessage(`${activePlayer.name} est gelé (Freeze) !`);
+            }            
             waitThenNextPlayer(2000);
         } else if (match.game.roundEnded) {
             setMessage(`FLIP 7 ou Fin de manche !`);
@@ -199,7 +203,11 @@ export const GameController = ({ playerCount, playerNames, onGameOver }) => {
                 
                 // Vérifier si le joueur a sauté (doublon)
                 if (!currentPlayer.state) {
-                    setMessage(`DOUBLON ! ${currentPlayer.name} est éliminé de la manche.`);
+                    if (currentPlayer.eliminatedByDuplicate) {
+                        setMessage(`DOUBLON ! ${currentPlayer.name} est éliminé.`);
+                    } else {
+                        setMessage(`${currentPlayer.name} est gelé (Freeze) !`);
+                    }             
                     waitThenNextPlayer(2000);
                 } else if (match.game.roundEnded) {
                     setMessage(`Fin de manche !`);
@@ -311,9 +319,9 @@ export const GameController = ({ playerCount, playerNames, onGameOver }) => {
                 <Box flexDirection="column" width="100%" height="100%">
                     <Text>Votre main</Text>
                     <Box borderStyle="single"width="100%" height="100%" flexDirection="column" paddingX="1" justifyContent="center">
-                        <Box width="100%" gap="2">
+                        <Box width="100%" gap="2" justifyContent="center" flexWrap="wrap">
                             { currentPlayer.hasSecondChance() ? (
-                                <CardVisual card="Second chance" />
+                                <CardVisual card="Second Chance" />
                             ) : ("")}
                             {currentPlayer.all_cards.map((card) => (
                                 <CardVisual card={card} />
